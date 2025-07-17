@@ -10,22 +10,22 @@ app.secret_key = 'axiom_secret_key'  # Change this for production
 BOSSES = [
     {
         'name': '170',
-        'respawn_minutes': 70,
-        'window_minutes': 5
-    },
-    {
-        'name': '180',
         'respawn_minutes': 80,
         'window_minutes': 5
     },
     {
+        'name': '180',
+        'respawn_minutes': 90,
+        'window_minutes': 5
+    },
+    {
         'name': '210',
-        'respawn_minutes': 130,
+        'respawn_minutes': 125,
         'window_minutes': 5
     },
     {
         'name': '215',
-        'respawn_minutes': 140,
+        'respawn_minutes': 135,
         'window_minutes': 5
     },
         {
