@@ -27,7 +27,28 @@ BOSSES = [
         'name': '215',
         'respawn_minutes': 140,
         'window_minutes': 5
+    },
+        {
+        'name': 'Proteus',
+        'respawn_minutes': 960,
+        'window_minutes': 15
+    },
+    {
+        'name': 'Dino',
+        'respawn_minutes': 1680,
+        'window_minutes': 960
+    },
+    {
+        'name': 'Bloodthorn',
+        'respawn_minutes': 1680,
+        'window_minutes': 960
+    },
+    {
+        'name': 'Gelebron',
+        'respawn_minutes': 1680,
+        'window_minutes': 960
     }
+
 ] 
 
 # Hardcoded users (edit as needed)
@@ -59,10 +80,12 @@ def get_boss_by_name(name):
     return None
 
 def format_remaining(td):
-    if td.total_seconds() <= 0:
+    if td is None or td.total_seconds() <= 0:
         return 'Ready!'
-    minutes, seconds = divmod(int(td.total_seconds()), 60)
-    return f'{minutes:02d}:{seconds:02d}'
+    total_seconds = int(td.total_seconds())
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f'{hours:02d}:{minutes:02d}:{seconds:02d}'
 
 @app.route('/', methods=['GET'])
 def index():
@@ -357,9 +380,10 @@ TEMPLATE = '''
     function formatCountdown(seconds) {
         if (seconds === null || seconds === '' || isNaN(seconds)) return '';
         if (seconds <= 0) return 'Ready!';
-        let m = Math.floor(seconds / 60);
+        let h = Math.floor(seconds / 3600);
+        let m = Math.floor((seconds % 3600) / 60);
         let s = seconds % 60;
-        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     }
     function updateTimers() {
         document.querySelectorAll('.respawn-timer').forEach(function(el) {
