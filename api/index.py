@@ -47,6 +47,11 @@ BOSSES = [
         'name': 'Gelebron',
         'respawn_minutes': 1680,
         'window_minutes': 960
+    },
+    {
+        'name': 'Crom',
+        'respawn_minutes': 5760,
+        'window_minutes': 1440
     }
 
 ] 
