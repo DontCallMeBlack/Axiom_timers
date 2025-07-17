@@ -308,10 +308,33 @@ TEMPLATE = '''
             justify-content: flex-end;
         }
         .boss-action a.button, .boss-action button {
-            width: 100%;
-            font-size: 1.05em;
-            padding: 0.7em 0.4em;
-            margin: 0;
+            background: linear-gradient(90deg, #ff512f 0%, #dd2476 100%);
+            color: #fff;
+            padding: 0.7em 1.3em;
+            border-radius: 0.5em;
+            text-decoration: none;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 0.2em 0.8em #dd247655, 0 0.1em 0.3em #0002;
+            transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+            outline: none;
+            display: inline-block;
+            margin: 0.3em 0;
+            font-size: 1.1rem;
+            letter-spacing: 0.03em;
+            position: relative;
+            overflow: hidden;
+        }
+        .boss-action a.button:hover, .boss-action button:hover, .boss-action a.button:focus, .boss-action button:focus {
+            background: linear-gradient(90deg, #ff512f 0%, #f09819 100%);
+            box-shadow: 0 0.4em 1.6em #ff512f55, 0 0.1em 0.3em #0003;
+            transform: translateY(-2px) scale(1.03);
+        }
+        .boss-action a.button:active, .boss-action button:active {
+            background: linear-gradient(90deg, #dd2476 0%, #ff512f 100%);
+            box-shadow: 0 0.1em 0.3em #ff512f33;
+            transform: scale(0.98);
         }
         .flash {
             padding: 1em;
