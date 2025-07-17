@@ -102,15 +102,25 @@ def index():
         if timer_entry and isinstance(timer_entry, dict):
             last_kill = timer_entry.get('kill_time')
             last_user = timer_entry.get('user', 'N/A')
+            spawn_time = timer_entry.get('spawn_time')
+            window_end_time = timer_entry.get('window_end_time')
         else:
             last_kill = timer_entry
             last_user = 'N/A'
+            spawn_time = None
+            window_end_time = None
         if last_kill:
             last_kill_dt = datetime.fromisoformat(last_kill)
-            respawn = last_kill_dt + timedelta(minutes=boss['respawn_minutes'])
-            window_end = respawn + timedelta(minutes=boss['window_minutes'])
-            respawn_remaining = respawn - now
-            window_remaining = window_end - now
+            if spawn_time:
+                spawn_dt = datetime.fromisoformat(spawn_time)
+            else:
+                spawn_dt = last_kill_dt + timedelta(minutes=boss['respawn_minutes'])
+            if window_end_time:
+                window_end_dt = datetime.fromisoformat(window_end_time)
+            else:
+                window_end_dt = spawn_dt + timedelta(minutes=boss['window_minutes'])
+            respawn_remaining = spawn_dt - now
+            window_remaining = window_end_dt - now
             respawn_seconds = int(respawn_remaining.total_seconds())
             window_seconds = int(window_remaining.total_seconds())
         else:
@@ -169,8 +179,15 @@ def reset(boss_name):
         return redirect(url_for('index'))
     if request.method == 'POST':
         kill_dt = datetime.utcnow()
+        spawn_dt = kill_dt + timedelta(minutes=boss['respawn_minutes'])
+        window_end_dt = spawn_dt + timedelta(minutes=boss['window_minutes'])
         timers = load_timers()
-        timers[boss_name] = {"kill_time": kill_dt.isoformat(), "user": session['username']}
+        timers[boss_name] = {
+            "kill_time": kill_dt.isoformat(),
+            "spawn_time": spawn_dt.isoformat(),
+            "window_end_time": window_end_dt.isoformat(),
+            "user": session['username']
+        }
         save_timers(timers)
         flash(f'{boss_name} timer reset!', 'success')
         return redirect(url_for('index'))
@@ -199,7 +216,7 @@ TEMPLATE = '''
             max-width: 700px;
             margin: 40px auto 20px auto;
             background: #23262f;
-            padding: 2.5em 2em 2em 2em;
+            padding: 2.2em 1em 1.5em 1em;
             border-radius: 18px;
             box-shadow: 0 4px 24px #000a, 0 1.5px 4px #0004;
         }
@@ -208,18 +225,20 @@ TEMPLATE = '''
             font-weight: 700;
             letter-spacing: 2px;
             margin-bottom: 0.5em;
+            font-size: 1.25em;
         }
         .topbar {
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            margin-bottom: 1.5em;
+            margin-bottom: 1.2em;
             gap: 0.5em;
         }
         .username {
             margin-right: 1em;
             font-weight: 600;
             color: #7dd3fc;
+            font-size: 1em;
         }
         table {
             width: 100%;
@@ -228,8 +247,9 @@ TEMPLATE = '''
             margin-top: 1em;
         }
         th, td {
-            padding: 1em 0.5em;
+            padding: 0.7em 0.3em;
             text-align: center;
+            font-size: 0.98em;
         }
         th {
             background: #232b3a;
@@ -249,7 +269,7 @@ TEMPLATE = '''
         }
         td {
             border-bottom: 1px solid #232b3a;
-            font-size: 1.08em;
+            font-size: 1em;
         }
         tr:last-child td {
             border-bottom: none;
@@ -268,6 +288,7 @@ TEMPLATE = '''
             outline: none;
             display: inline-block;
             margin: 0.2em 0;
+            font-size: 1em;
         }
         a.button:hover, button:hover {
             background: linear-gradient(90deg, #1e40af 0%, #2563eb 100%);
@@ -291,10 +312,10 @@ TEMPLATE = '''
         /* Responsive styles */
         @media (max-width: 600px) {
             .container {
-                padding: 1em 0.3em 1.5em 0.3em;
+                padding: 1em 0.2em 1.2em 0.2em;
             }
             h1 {
-                font-size: 1.3em;
+                font-size: 1.1em;
             }
             .topbar {
                 flex-direction: column;
@@ -306,18 +327,18 @@ TEMPLATE = '''
                 margin-right: 0;
                 margin-bottom: 0.2em;
                 text-align: left;
+                font-size: 0.98em;
             }
             th, td {
-                padding: 0.7em 0.2em;
-                font-size: 1em;
+                padding: 0.6em 0.2em;
+                font-size: 0.97em;
             }
             table, thead, tbody, th, td, tr {
                 display: block;
             }
             table {
                 width: 100%;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
+                overflow-x: hidden;
                 background: none;
             }
             thead {
@@ -329,38 +350,38 @@ TEMPLATE = '''
                 border-radius: 10px;
                 background: #23262f;
                 display: block;
-                padding: 0.5em 0.2em;
+                padding: 0.4em 0.1em;
             }
             td {
                 border: none;
                 position: relative;
-                padding-left: 45%;
+                padding-left: 44%;
                 text-align: left;
-                min-height: 2.2em;
+                min-height: 2em;
                 display: flex;
                 align-items: center;
-                font-size: 1em;
-                margin-bottom: 0.2em;
+                font-size: 0.97em;
+                margin-bottom: 0.15em;
                 background: none;
             }
             td:before {
                 position: absolute;
-                left: 0.7em;
-                width: 42%;
+                left: 0.6em;
+                width: 40%;
                 white-space: nowrap;
                 font-weight: 700;
                 color: #7dd3fc;
                 content: attr(data-label);
-                font-size: 0.98em;
+                font-size: 0.97em;
             }
             td:last-child {
                 justify-content: flex-start;
             }
             a.button, button {
                 width: 100%;
-                margin: 0.3em 0;
-                font-size: 1.05em;
-                padding: 0.7em 0.5em;
+                margin: 0.2em 0;
+                font-size: 1em;
+                padding: 0.6em 0.4em;
             }
         }
         @media (max-width: 400px) {
