@@ -2,9 +2,16 @@ from flask import Flask, render_template_string, request, redirect, url_for, fla
 import json
 import os
 from datetime import datetime, timedelta
+from pymongo import MongoClient
 
 app = Flask(__name__)
-app.secret_key = 'axiom_secret_key'  # Change this for production
+app.secret_key = os.environ.get('SECRET_KEY', 'change_this')
+
+# MongoDB setup
+MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017')
+client = MongoClient(MONGO_URI)
+db = client['axiom']
+timers_collection = db['timers']
 
 # Hardcoded boss data (edit as needed)
 BOSSES = [
@@ -67,21 +74,15 @@ USERS = {
     'user4': 'user4',
 }
 
-# Use /tmp for Vercel compatibility
-TIMERS_FILE = '/tmp/bosses.json'
-
+# MongoDB timer helpers
 def load_timers():
-    if not os.path.exists(TIMERS_FILE):
-        timers = {boss['name']: None for boss in BOSSES}
-        with open(TIMERS_FILE, 'w') as f:
-            json.dump(timers, f)
-        return timers
-    with open(TIMERS_FILE, 'r') as f:
-        return json.load(f)
+    timers = {}
+    for doc in timers_collection.find():
+        timers[doc['name']] = doc
+    return timers
 
-def save_timers(timers):
-    with open(TIMERS_FILE, 'w') as f:
-        json.dump(timers, f)
+def save_timer(boss_name, timer_data):
+    timers_collection.update_one({'name': boss_name}, {'$set': timer_data}, upsert=True)
 
 def get_boss_by_name(name):
     for boss in BOSSES:
@@ -108,13 +109,13 @@ def index():
     not_due_bosses = []
     for boss in BOSSES:
         timer_entry = timers.get(boss['name'])
-        if timer_entry and isinstance(timer_entry, dict):
+        if timer_entry:
             last_kill = timer_entry.get('kill_time')
             last_user = timer_entry.get('user', 'N/A')
             spawn_time = timer_entry.get('spawn_time')
             window_end_time = timer_entry.get('window_end_time')
         else:
-            last_kill = timer_entry
+            last_kill = None
             last_user = 'N/A'
             spawn_time = None
             window_end_time = None
@@ -190,17 +191,51 @@ def reset(boss_name):
         kill_dt = datetime.utcnow()
         spawn_dt = kill_dt + timedelta(minutes=boss['respawn_minutes'])
         window_end_dt = spawn_dt + timedelta(minutes=boss['window_minutes'])
-        timers = load_timers()
-        timers[boss_name] = {
+        timer_data = {
+            "name": boss_name,
             "kill_time": kill_dt.isoformat(),
             "spawn_time": spawn_dt.isoformat(),
             "window_end_time": window_end_dt.isoformat(),
             "user": session['username']
         }
-        save_timers(timers)
+        save_timer(boss_name, timer_data)
         flash(f'{boss_name} timer reset!', 'success')
         return redirect(url_for('index'))
     return render_template_string(RESET_TEMPLATE, boss=boss, now_func=datetime.utcnow)
+
+@app.route('/edit/<boss_name>', methods=['GET', 'POST'])
+def edit(boss_name):
+    if 'username' not in session:
+        flash('You must be logged in to edit timers.', 'danger')
+        return redirect(url_for('login'))
+    boss = get_boss_by_name(boss_name)
+    if not boss:
+        flash('Boss not found.', 'danger')
+        return redirect(url_for('index'))
+    timers = load_timers()
+    timer_entry = timers.get(boss_name)
+    if not timer_entry:
+        flash('No timer to edit for this boss.', 'danger')
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        try:
+            minutes = int(request.form.get('minutes', 0))
+            if minutes <= 0:
+                flash('Please enter a positive number of minutes.', 'danger')
+                return redirect(url_for('edit', boss_name=boss_name))
+        except Exception:
+            flash('Invalid input.', 'danger')
+            return redirect(url_for('edit', boss_name=boss_name))
+        # Reduce kill_time, spawn_time, window_end_time by minutes
+        for key in ['kill_time', 'spawn_time', 'window_end_time']:
+            if timer_entry.get(key):
+                dt = datetime.fromisoformat(timer_entry[key])
+                dt -= timedelta(minutes=minutes)
+                timer_entry[key] = dt.isoformat()
+        save_timer(boss_name, timer_entry)
+        flash(f'{boss_name} timer reduced by {minutes} minutes!', 'success')
+        return redirect(url_for('index'))
+    return render_template_string(EDIT_TEMPLATE, boss=boss, boss_name=boss_name)
 
 TEMPLATE = '''
 <!DOCTYPE html>
@@ -497,6 +532,7 @@ TEMPLATE = '''
                     <div class="boss-action">
                         {% if username %}
                             <a class="button" href="/reset/{{ boss.name }}">Reset</a>
+                            <a class="button" href="/edit/{{ boss.name }}" style="margin-left:0.5em;background:linear-gradient(90deg,#2563eb 0%,#3b82f6 100%)">Edit</a>
                         {% else %}
                             <a class="button" href="/login">Login to Reset</a>
                         {% endif %}
@@ -521,6 +557,7 @@ TEMPLATE = '''
                     <div class="boss-action">
                         {% if username %}
                             <a class="button" href="/reset/{{ boss.name }}">Reset</a>
+                            <a class="button" href="/edit/{{ boss.name }}">Edit</a>
                         {% else %}
                             <a class="button" href="/login">Login to Reset</a>
                         {% endif %}
@@ -669,6 +706,43 @@ RESET_TEMPLATE = '''
         <form method="post">
             <div style="text-align:center; font-size:1.1em; margin-bottom:1em;">Are you sure you want to reset the timer for <b>{{ boss.name }}</b>?</div>
             <button type="submit">Confirm Reset</button>
+        </form>
+        <a href="/">Back to Timers</a>
+    </div>
+</body>
+</html>
+'''
+
+EDIT_TEMPLATE = '''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit {{ boss.name }} Timer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Montserrat', Arial, sans-serif; background: #181a20; color: #e0e6ed; margin: 0; padding: 0; }
+        .container { max-width: 400px; margin: 40px auto; background: #23262f; padding: 2em; border-radius: 18px; box-shadow: 0 2px 8px #0008; }
+        h2 { text-align: center; }
+        form { display: flex; flex-direction: column; gap: 1.5em; }
+        label { font-weight: bold; }
+        input { padding: 0.5em; border-radius: 5px; border: none; }
+        button { background: linear-gradient(90deg, #ff512f 0%, #dd2476 100%); color: #fff; padding: 0.7em; border: none; border-radius: 7px; font-size: 1em; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px #dd247655; transition: background 0.2s, box-shadow 0.2s; outline: none; }
+        button:hover { background: linear-gradient(90deg, #ff512f 0%, #f09819 100%); box-shadow: 0 4px 16px #ff512f55; }
+        a { color: #3b82f6; text-decoration: none; text-align: center; margin-top: 1em; display: block; }
+        .flash { padding: 1em; margin-bottom: 1em; border-radius: 7px; font-weight: 600; letter-spacing: 0.5px; }
+        .flash-success { background: #22c55e33; color: #22c55e; }
+        .flash-danger { background: #ef444433; color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Edit {{ boss.name }} Timer</h2>
+        <form method="post">
+            <label for="minutes">How many minutes to reduce from timer?</label>
+            <input type="number" name="minutes" id="minutes" min="1" required>
+            <button type="submit">Reduce Timer</button>
         </form>
         <a href="/">Back to Timers</a>
     </div>
