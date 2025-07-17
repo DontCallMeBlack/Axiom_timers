@@ -3,6 +3,8 @@ import json
 import os
 from datetime import datetime, timedelta
 from pymongo import MongoClient
+import logging
+logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'change_this')
@@ -97,6 +99,12 @@ def format_remaining(td):
     hours, remainder = divmod(total_seconds, 3600)
     minutes, seconds = divmod(remainder, 60)
     return f'{hours:02d}:{minutes:02d}:{seconds:02d}'
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    import traceback
+    print(traceback.format_exc())
+    return "Internal Server Error", 500
 
 @app.route('/', methods=['GET'])
 def index():
