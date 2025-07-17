@@ -90,6 +90,9 @@ def format_remaining(td):
 
 @app.route('/', methods=['GET'])
 def index():
+    if 'username' not in session:
+        flash('You must be logged in to view timers.', 'danger')
+        return redirect(url_for('login'))
     timers = load_timers()
     now = datetime.utcnow()
     due_bosses = []
@@ -306,7 +309,7 @@ TEMPLATE = '''
             }
             th, td {
                 padding: 0.7em 0.2em;
-                font-size: 0.98em;
+                font-size: 1em;
             }
             table, thead, tbody, th, td, tr {
                 display: block;
@@ -315,6 +318,7 @@ TEMPLATE = '''
                 width: 100%;
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
+                background: none;
             }
             thead {
                 display: none;
@@ -325,28 +329,38 @@ TEMPLATE = '''
                 border-radius: 10px;
                 background: #23262f;
                 display: block;
+                padding: 0.5em 0.2em;
             }
             td {
                 border: none;
                 position: relative;
-                padding-left: 50%;
+                padding-left: 45%;
                 text-align: left;
                 min-height: 2.2em;
                 display: flex;
                 align-items: center;
                 font-size: 1em;
+                margin-bottom: 0.2em;
+                background: none;
             }
             td:before {
                 position: absolute;
                 left: 0.7em;
-                width: 45%;
+                width: 42%;
                 white-space: nowrap;
                 font-weight: 700;
                 color: #7dd3fc;
                 content: attr(data-label);
+                font-size: 0.98em;
             }
             td:last-child {
                 justify-content: flex-start;
+            }
+            a.button, button {
+                width: 100%;
+                margin: 0.3em 0;
+                font-size: 1.05em;
+                padding: 0.7em 0.5em;
             }
         }
         @media (max-width: 400px) {
