@@ -56,6 +56,10 @@ USERS = {
     'dontcallmeblack': 'dcmb',
     'neveon': 'sigmaboy',
     'azazelbreath': 'lezaza',
+    'user1': 'user1',
+    'user2': 'user2',
+    'user3': 'user3',
+    'user4': 'user4',
 }
 
 # Use /tmp for Vercel compatibility
