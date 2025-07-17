@@ -58,7 +58,8 @@ USERS = {
     'azazelbreath': 'lezaza',
 }
 
-TIMERS_FILE = os.path.join(os.path.dirname(__file__), '../bosses.json')
+# Use /tmp for Vercel compatibility
+TIMERS_FILE = '/tmp/bosses.json'
 
 def load_timers():
     if not os.path.exists(TIMERS_FILE):
