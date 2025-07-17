@@ -213,63 +213,64 @@ TEMPLATE = '''
             flex-direction: column;
         }
         .container {
-            max-width: 700px;
-            margin: 40px auto 20px auto;
+            max-width: 95vw;
+            width: 100%;
+            margin: 4vh auto 2vh auto;
             background: #23262f;
-            padding: 2.2em 1em 1.5em 1em;
-            border-radius: 18px;
-            box-shadow: 0 4px 24px #000a, 0 1.5px 4px #0004;
+            padding: 4vw 2vw 3vw 2vw;
+            border-radius: 1.2rem;
+            box-shadow: 0 0.4rem 2.4rem #000a, 0 0.15rem 0.4rem #0004;
         }
         h1 {
             text-align: center;
             font-weight: 700;
-            letter-spacing: 2px;
-            margin-bottom: 0.5em;
-            font-size: 1.25em;
+            letter-spacing: 0.12em;
+            margin-bottom: 1em;
+            font-size: 2.2rem;
         }
         .topbar {
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            margin-bottom: 1.2em;
-            gap: 0.5em;
+            margin-bottom: 2vh;
+            gap: 1vw;
         }
         .username {
-            margin-right: 1em;
+            margin-right: 1vw;
             font-weight: 600;
             color: #7dd3fc;
-            font-size: 1em;
+            font-size: 1.1rem;
         }
         table {
             width: 100%;
             border-collapse: separate;
-            border-spacing: 0 0.5em;
-            margin-top: 1em;
+            border-spacing: 0 1vw;
+            margin-top: 2vw;
         }
         th, td {
-            padding: 0.7em 0.3em;
+            padding: 1em 0.5em;
             text-align: center;
-            font-size: 0.98em;
+            font-size: 1rem;
         }
         th {
             background: #232b3a;
             color: #7dd3fc;
             font-weight: 700;
-            border-radius: 8px 8px 0 0;
-            border-bottom: 2px solid #334155;
+            border-radius: 0.5em 0.5em 0 0;
+            border-bottom: 0.15em solid #334155;
         }
         tr {
             background: #23262f;
-            border-radius: 10px;
-            box-shadow: 0 1px 4px #0002;
+            border-radius: 0.7em;
+            box-shadow: 0 0.1em 0.4em #0002;
             transition: box-shadow 0.2s;
         }
         tr:hover {
-            box-shadow: 0 4px 16px #0004;
+            box-shadow: 0 0.4em 1.6em #0004;
         }
         td {
-            border-bottom: 1px solid #232b3a;
-            font-size: 1em;
+            border-bottom: 0.1em solid #232b3a;
+            font-size: 1rem;
         }
         tr:last-child td {
             border-bottom: none;
@@ -277,29 +278,30 @@ TEMPLATE = '''
         a.button, button {
             background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
             color: #fff;
-            padding: 0.6em 1.2em;
-            border-radius: 7px;
+            padding: 0.7em 1.3em;
+            border-radius: 0.5em;
             text-decoration: none;
             font-weight: 600;
             border: none;
             cursor: pointer;
-            box-shadow: 0 2px 8px #2563eb33;
+            box-shadow: 0 0.2em 0.8em #2563eb33;
             transition: background 0.2s, box-shadow 0.2s;
             outline: none;
             display: inline-block;
-            margin: 0.2em 0;
-            font-size: 1em;
+            margin: 0.3em 0;
+            font-size: 1.1rem;
         }
         a.button:hover, button:hover {
             background: linear-gradient(90deg, #1e40af 0%, #2563eb 100%);
-            box-shadow: 0 4px 16px #2563eb55;
+            box-shadow: 0 0.4em 1.6em #2563eb55;
         }
         .flash {
             padding: 1em;
             margin-bottom: 1.2em;
-            border-radius: 7px;
+            border-radius: 0.5em;
             font-weight: 600;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.03em;
+            font-size: 1rem;
         }
         .flash-success {
             background: #22c55e33;
@@ -312,26 +314,26 @@ TEMPLATE = '''
         /* Responsive styles */
         @media (max-width: 600px) {
             .container {
-                padding: 1em 0.2em 1.2em 0.2em;
+                padding: 2vw 1vw 2vw 1vw;
             }
             h1 {
-                font-size: 1.1em;
+                font-size: 1.4rem;
             }
             .topbar {
                 flex-direction: column;
                 align-items: stretch;
-                gap: 0.7em;
+                gap: 1vw;
                 margin-bottom: 1em;
             }
             .username {
                 margin-right: 0;
                 margin-bottom: 0.2em;
                 text-align: left;
-                font-size: 0.98em;
+                font-size: 1rem;
             }
             th, td {
-                padding: 0.6em 0.2em;
-                font-size: 0.97em;
+                padding: 0.7em 0.2em;
+                font-size: 0.98rem;
             }
             table, thead, tbody, th, td, tr {
                 display: block;
@@ -346,8 +348,8 @@ TEMPLATE = '''
             }
             tr {
                 margin-bottom: 1em;
-                box-shadow: 0 1px 4px #0002;
-                border-radius: 10px;
+                box-shadow: 0 0.1em 0.4em #0002;
+                border-radius: 0.7em;
                 background: #23262f;
                 display: block;
                 padding: 0.4em 0.1em;
@@ -360,7 +362,7 @@ TEMPLATE = '''
                 min-height: 2em;
                 display: flex;
                 align-items: center;
-                font-size: 0.97em;
+                font-size: 0.98rem;
                 margin-bottom: 0.15em;
                 background: none;
             }
@@ -372,7 +374,7 @@ TEMPLATE = '''
                 font-weight: 700;
                 color: #7dd3fc;
                 content: attr(data-label);
-                font-size: 0.97em;
+                font-size: 0.98rem;
             }
             td:last-child {
                 justify-content: flex-start;
@@ -380,22 +382,22 @@ TEMPLATE = '''
             a.button, button {
                 width: 100%;
                 margin: 0.2em 0;
-                font-size: 1em;
-                padding: 0.6em 0.4em;
+                font-size: 1rem;
+                padding: 0.7em 0.4em;
             }
         }
         @media (max-width: 400px) {
             h1 {
-                font-size: 1em;
+                font-size: 1.1rem;
             }
             .container {
-                padding: 0.5em 0.1em 1em 0.1em;
+                padding: 1vw 0.5vw 1vw 0.5vw;
             }
         }
         footer {
             text-align: center;
             color: #64748b;
-            font-size: 0.95em;
+            font-size: 0.95rem;
             margin-top: 2em;
             margin-bottom: 1em;
         }
