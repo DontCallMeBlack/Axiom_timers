@@ -210,6 +210,7 @@ TEMPLATE = '''
             justify-content: flex-end;
             align-items: center;
             margin-bottom: 1.5em;
+            gap: 0.5em;
         }
         .username {
             margin-right: 1em;
@@ -261,6 +262,8 @@ TEMPLATE = '''
             box-shadow: 0 2px 8px #2563eb33;
             transition: background 0.2s, box-shadow 0.2s;
             outline: none;
+            display: inline-block;
+            margin: 0.2em 0;
         }
         a.button:hover, button:hover {
             background: linear-gradient(90deg, #1e40af 0%, #2563eb 100%);
@@ -281,16 +284,76 @@ TEMPLATE = '''
             background: #ef444433;
             color: #ef4444;
         }
+        /* Responsive styles */
         @media (max-width: 600px) {
             .container {
                 padding: 1em 0.3em 1.5em 0.3em;
+            }
+            h1 {
+                font-size: 1.3em;
+            }
+            .topbar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.7em;
+                margin-bottom: 1em;
+            }
+            .username {
+                margin-right: 0;
+                margin-bottom: 0.2em;
+                text-align: left;
             }
             th, td {
                 padding: 0.7em 0.2em;
                 font-size: 0.98em;
             }
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+            table {
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            thead {
+                display: none;
+            }
+            tr {
+                margin-bottom: 1em;
+                box-shadow: 0 1px 4px #0002;
+                border-radius: 10px;
+                background: #23262f;
+                display: block;
+            }
+            td {
+                border: none;
+                position: relative;
+                padding-left: 50%;
+                text-align: left;
+                min-height: 2.2em;
+                display: flex;
+                align-items: center;
+                font-size: 1em;
+            }
+            td:before {
+                position: absolute;
+                left: 0.7em;
+                width: 45%;
+                white-space: nowrap;
+                font-weight: 700;
+                color: #7dd3fc;
+                content: attr(data-label);
+            }
+            td:last-child {
+                justify-content: flex-start;
+            }
+        }
+        @media (max-width: 400px) {
             h1 {
-                font-size: 1.3em;
+                font-size: 1em;
+            }
+            .container {
+                padding: 0.5em 0.1em 1em 0.1em;
             }
         }
         footer {
@@ -332,11 +395,11 @@ TEMPLATE = '''
             </tr>
             {% for boss in due_bosses %}
             <tr style="background:#1e293b;">
-                <td>{{ boss.name }}</td>
-                <td>{{ boss.last_user }}</td>
-                <td><span class="respawn-timer" data-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></td>
-                <td><span class="window-timer" data-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></td>
-                <td>
+                <td data-label="Boss">{{ boss.name }}</td>
+                <td data-label="Last Reset By">{{ boss.last_user }}</td>
+                <td data-label="Next Spawn"><span class="respawn-timer" data-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></td>
+                <td data-label="Window End"><span class="window-timer" data-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></td>
+                <td data-label="Action">
                     {% if username %}
                         <a class="button" href="/reset/{{ boss.name }}">Reset</a>
                     {% else %}
@@ -358,11 +421,11 @@ TEMPLATE = '''
             </tr>
             {% for boss in bosses %}
             <tr>
-                <td>{{ boss.name }}</td>
-                <td>{{ boss.last_user }}</td>
-                <td><span class="respawn-timer" data-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></td>
-                <td><span class="window-timer" data-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></td>
-                <td>
+                <td data-label="Boss">{{ boss.name }}</td>
+                <td data-label="Last Reset By">{{ boss.last_user }}</td>
+                <td data-label="Next Spawn"><span class="respawn-timer" data-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></td>
+                <td data-label="Window End"><span class="window-timer" data-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></td>
+                <td data-label="Action">
                     {% if username %}
                         <a class="button" href="/reset/{{ boss.name }}">Reset</a>
                     {% else %}
