@@ -241,59 +241,77 @@ TEMPLATE = '''
             color: #7dd3fc;
             font-size: 1.1rem;
         }
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 1vw;
-            margin-top: 2vw;
+        .boss-section {
+            margin-bottom: 2.5em;
         }
-        th, td {
-            padding: 1em 0.5em;
-            text-align: center;
-            font-size: 1rem;
+        .boss-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 1.2em;
+            margin-top: 1.2em;
         }
-        th {
+        .boss-card {
             background: #232b3a;
-            color: #7dd3fc;
+            border-radius: 1em;
+            box-shadow: 0 0.2em 1em #0003;
+            padding: 1.2em 1em 1em 1em;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            position: relative;
+            min-width: 0;
+        }
+        .boss-header {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 0.7em;
+        }
+        .boss-name {
+            font-size: 1.25rem;
             font-weight: 700;
-            border-radius: 0.5em 0.5em 0 0;
-            border-bottom: 0.15em solid #334155;
+            flex: 1;
+            color: #7dd3fc;
+            word-break: break-word;
         }
-        tr {
-            background: #23262f;
-            border-radius: 0.7em;
-            box-shadow: 0 0.1em 0.4em #0002;
-            transition: box-shadow 0.2s;
-        }
-        tr:hover {
-            box-shadow: 0 0.4em 1.6em #0004;
-        }
-        td {
-            border-bottom: 0.1em solid #232b3a;
-            font-size: 1rem;
-        }
-        tr:last-child td {
-            border-bottom: none;
-        }
-        a.button, button {
-            background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
-            color: #fff;
-            padding: 0.7em 1.3em;
-            border-radius: 0.5em;
-            text-decoration: none;
+        .boss-status {
+            font-size: 0.95em;
             font-weight: 600;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 0.2em 0.8em #2563eb33;
-            transition: background 0.2s, box-shadow 0.2s;
-            outline: none;
-            display: inline-block;
-            margin: 0.3em 0;
-            font-size: 1.1rem;
+            padding: 0.25em 0.8em;
+            border-radius: 1em;
+            background: #22c55e33;
+            color: #22c55e;
+            margin-left: 0.5em;
         }
-        a.button:hover, button:hover {
-            background: linear-gradient(90deg, #1e40af 0%, #2563eb 100%);
-            box-shadow: 0 0.4em 1.6em #2563eb55;
+        .boss-status.upcoming {
+            background: #2563eb33;
+            color: #3b82f6;
+        }
+        .boss-info {
+            margin-bottom: 0.5em;
+            width: 100%;
+        }
+        .boss-label {
+            font-weight: 600;
+            color: #94a3b8;
+            font-size: 0.98em;
+            margin-right: 0.3em;
+        }
+        .boss-value {
+            font-size: 1em;
+            color: #e0e6ed;
+        }
+        .boss-action {
+            width: 100%;
+            margin-top: 0.7em;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .boss-action a.button, .boss-action button {
+            width: 100%;
+            font-size: 1.05em;
+            padding: 0.7em 0.4em;
+            margin: 0;
         }
         .flash {
             padding: 1em;
@@ -330,6 +348,16 @@ TEMPLATE = '''
                 margin-bottom: 0.2em;
                 text-align: left;
                 font-size: 1rem;
+            }
+            .boss-cards {
+                grid-template-columns: 1fr;
+                gap: 1em;
+            }
+            .boss-card {
+                padding: 1em 0.7em 0.8em 0.7em;
+            }
+            .boss-name {
+                font-size: 1.1rem;
             }
             th, td {
                 padding: 0.7em 0.2em;
@@ -422,57 +450,53 @@ TEMPLATE = '''
           {% endif %}
         {% endwith %}
         {% if due_bosses %}
-        <h2 style="color:#22c55e; text-align:center; margin-top:1em;">Due Bosses</h2>
-        <table>
-            <tr>
-                <th>Boss</th>
-                <th>Last Reset By</th>
-                <th>Next Spawn</th>
-                <th>Window End</th>
-                <th>Action</th>
-            </tr>
-            {% for boss in due_bosses %}
-            <tr style="background:#1e293b;">
-                <td data-label="Boss">{{ boss.name }}</td>
-                <td data-label="Last Reset By">{{ boss.last_user }}</td>
-                <td data-label="Next Spawn"><span class="respawn-timer" data-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></td>
-                <td data-label="Window End"><span class="window-timer" data-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></td>
-                <td data-label="Action">
-                    {% if username %}
-                        <a class="button" href="/reset/{{ boss.name }}">Reset</a>
-                    {% else %}
-                        <a class="button" href="/login">Login to Reset</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
+        <div class="boss-section">
+            <h2 style="color:#22c55e; text-align:center; margin-top:1em;">Due Bosses</h2>
+            <div class="boss-cards">
+                {% for boss in due_bosses %}
+                <div class="boss-card">
+                    <div class="boss-header">
+                        <span class="boss-name">{{ boss.name }}</span>
+                        <span class="boss-status">Due</span>
+                    </div>
+                    <div class="boss-info"><span class="boss-label">Last Reset By:</span> <span class="boss-value">{{ boss.last_user }}</span></div>
+                    <div class="boss-info"><span class="boss-label">Next Spawn:</span> <span class="boss-value"><span class="respawn-timer" data-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></span></div>
+                    <div class="boss-info"><span class="boss-label">Window End:</span> <span class="boss-value"><span class="window-timer" data-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></span></div>
+                    <div class="boss-action">
+                        {% if username %}
+                            <a class="button" href="/reset/{{ boss.name }}">Reset</a>
+                        {% else %}
+                            <a class="button" href="/login">Login to Reset</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
         {% endif %}
-        <h2 style="color:#7dd3fc; text-align:center; margin-top:2em;">Upcoming Bosses</h2>
-        <table>
-            <tr>
-                <th>Boss</th>
-                <th>Last Reset By</th>
-                <th>Next Spawn</th>
-                <th>Window End</th>
-                <th>Action</th>
-            </tr>
-            {% for boss in bosses %}
-            <tr>
-                <td data-label="Boss">{{ boss.name }}</td>
-                <td data-label="Last Reset By">{{ boss.last_user }}</td>
-                <td data-label="Next Spawn"><span class="respawn-timer" data-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></td>
-                <td data-label="Window End"><span class="window-timer" data-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></td>
-                <td data-label="Action">
-                    {% if username %}
-                        <a class="button" href="/reset/{{ boss.name }}">Reset</a>
-                    {% else %}
-                        <a class="button" href="/login">Login to Reset</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
+        <div class="boss-section">
+            <h2 style="color:#7dd3fc; text-align:center; margin-top:2em;">Upcoming Bosses</h2>
+            <div class="boss-cards">
+                {% for boss in bosses %}
+                <div class="boss-card">
+                    <div class="boss-header">
+                        <span class="boss-name">{{ boss.name }}</span>
+                        <span class="boss-status upcoming">Upcoming</span>
+                    </div>
+                    <div class="boss-info"><span class="boss-label">Last Reset By:</span> <span class="boss-value">{{ boss.last_user }}</span></div>
+                    <div class="boss-info"><span class="boss-label">Next Spawn:</span> <span class="boss-value"><span class="respawn-timer" data-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></span></div>
+                    <div class="boss-info"><span class="boss-label">Window End:</span> <span class="boss-value"><span class="window-timer" data-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></span></div>
+                    <div class="boss-action">
+                        {% if username %}
+                            <a class="button" href="/reset/{{ boss.name }}">Reset</a>
+                        {% else %}
+                            <a class="button" href="/login">Login to Reset</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
     <footer>
         &copy; {{ now().year }} Axiom Clan Timers &mdash; Powered by Flask
