@@ -11,11 +11,28 @@ app.secret_key = os.environ.get('SECRET_KEY', 'change_this')
 
 # MongoDB setup
 MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017')
-client = MongoClient(MONGO_URI)
-db = client['axiom']
-timers_collection = db['timers']
-users_collection = db['users']
-pending_users_collection = db['pending_users']
+try:
+    client = MongoClient(MONGO_URI)
+    # Test the connection
+    client.admin.command('ping')
+    db = client['axiom']
+    timers_collection = db['timers']
+    users_collection = db['users']
+    pending_users_collection = db['pending_users']
+    print(f"MongoDB connected successfully to: {MONGO_URI.split('@')[1] if '@' in MONGO_URI else MONGO_URI}")
+except Exception as e:
+    print(f"MongoDB connection failed: {e}")
+    # Create dummy collections for fallback
+    class DummyCollection:
+        def find_one(self, *args, **kwargs): return None
+        def find(self, *args, **kwargs): return []
+        def insert_one(self, *args, **kwargs): return None
+        def update_one(self, *args, **kwargs): return None
+        def delete_one(self, *args, **kwargs): return None
+    
+    timers_collection = DummyCollection()
+    users_collection = DummyCollection()
+    pending_users_collection = DummyCollection()
 
 # Hardcoded boss data (edit as needed)
 BOSSES = [
@@ -69,7 +86,7 @@ BOSSES = [
 
 # Admin users (hardcoded for security)
 ADMIN_USERS = {
-    'dontcallmeblack': 'dcmb',
+    'dontcallmeblack': 'dcmb123',
     'neveon': 'sigmaboy',
     'windlord': 'wind123',
     'juliaa':'juliaa123',
