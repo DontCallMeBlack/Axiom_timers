@@ -11,6 +11,7 @@ app.secret_key = os.environ.get('SECRET_KEY', 'change_this')
 
 # MongoDB setup
 MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017')
+client = None
 try:
     client = MongoClient(MONGO_URI)
     # Test the connection
@@ -26,9 +27,20 @@ except Exception as e:
     class DummyCollection:
         def find_one(self, *args, **kwargs): return None
         def find(self, *args, **kwargs): return []
-        def insert_one(self, *args, **kwargs): return None
-        def update_one(self, *args, **kwargs): return None
-        def delete_one(self, *args, **kwargs): return None
+        def insert_one(self, *args, **kwargs): 
+            class DummyResult:
+                def __init__(self): self.inserted_id = None
+            return DummyResult()
+        def update_one(self, *args, **kwargs): 
+            class DummyResult:
+                def __init__(self): 
+                    self.modified_count = 0
+                    self.upserted_id = None
+            return DummyResult()
+        def delete_one(self, *args, **kwargs): 
+            class DummyResult:
+                def __init__(self): self.deleted_count = 0
+            return DummyResult()
     
     timers_collection = DummyCollection()
     users_collection = DummyCollection()
