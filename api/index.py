@@ -201,9 +201,17 @@ def format_remaining(td):
     if td is None or td.total_seconds() <= 0:
         return 'Ready!'
     total_seconds = int(td.total_seconds())
-    hours, remainder = divmod(total_seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    return f'{hours:02d}:{minutes:02d}:{seconds:02d}'
+    
+    days = total_seconds // 86400
+    hours = (total_seconds % 86400) // 3600
+    minutes = (total_seconds % 3600) // 60
+    
+    if days > 0:
+        return f"{days} day{'s' if days != 1 else ''}, {hours} hour{'s' if hours != 1 else ''}, {minutes} minute{'s' if minutes != 1 else ''}"
+    elif hours > 0:
+        return f"{hours} hour{'s' if hours != 1 else ''}, {minutes} minute{'s' if minutes != 1 else ''}"
+    else:
+        return f"{minutes} minute{'s' if minutes != 1 else ''}"
 
 @app.errorhandler(Exception)
 def handle_exception(e):
@@ -770,10 +778,18 @@ TEMPLATE = '''
     function formatCountdown(seconds) {
         if (seconds === null || seconds === '' || isNaN(seconds)) return '';
         if (seconds <= 0) return 'Ready!';
-        let h = Math.floor(seconds / 3600);
-        let m = Math.floor((seconds % 3600) / 60);
-        let s = seconds % 60;
-        return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        
+        let days = Math.floor(seconds / 86400);
+        let hours = Math.floor((seconds % 86400) / 3600);
+        let minutes = Math.floor((seconds % 3600) / 60);
+        
+        if (days > 0) {
+            return `${days} day${days !== 1 ? 's' : ''}, ${hours} hour${hours !== 1 ? 's' : ''}, ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        } else if (hours > 0) {
+            return `${hours} hour${hours !== 1 ? 's' : ''}, ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        } else {
+            return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        }
     }
     
     // Store initial timestamps for accurate timing
