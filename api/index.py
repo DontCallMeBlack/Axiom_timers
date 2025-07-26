@@ -818,7 +818,7 @@ LOGIN_TEMPLATE = '''
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Axiom MMO Timers</title>
+    <title>Login - Axiom Timers</title>
     <style>
         body { font-family: Arial, sans-serif; background: #181a20; color: #eee; margin: 0; padding: 0; }
         .container { max-width: 400px; margin: 40px auto; background: #23262f; padding: 2em; border-radius: 10px; box-shadow: 0 2px 8px #0008; }
