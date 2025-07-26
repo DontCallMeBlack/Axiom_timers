@@ -14,6 +14,8 @@ MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017')
 client = MongoClient(MONGO_URI)
 db = client['axiom']
 timers_collection = db['timers']
+users_collection = db['users']
+pending_users_collection = db['pending_users']
 
 # Hardcoded boss data (edit as needed)
 BOSSES = [
@@ -65,23 +67,76 @@ BOSSES = [
 
 ] 
 
-# Hardcoded users (edit as needed)
-USERS = {
+# Admin users (hardcoded for security)
+ADMIN_USERS = {
     'dontcallmeblack': 'dcmb',
     'neveon': 'sigmaboy',
-    'azazelbreath': 'lezaza',
-    'user1': 'user1',
-    'user2': 'user2',
-    'user3': 'user3',
-    'user4': 'user4',
+    'windlord': 'wind123',
+    'juliaa':'juliaa123',
+    'icymagic':'icy123',
 }
+
+# User management functions
+def is_admin(username):
+    return username in ADMIN_USERS
+
+def get_user_by_username(username):
+    return users_collection.find_one({'username': username})
+
+def create_user(username, password):
+    user_data = {
+        'username': username,
+        'password': password,
+        'created_at': datetime.utcnow().isoformat(),
+        'is_approved': False,
+        'is_admin': False
+    }
+    users_collection.insert_one(user_data)
+
+def approve_user(username):
+    # Get the pending user data
+    pending_user = pending_users_collection.find_one({'username': username})
+    if pending_user:
+        # Create the approved user in the users collection
+        user_data = {
+            'username': pending_user['username'],
+            'password': pending_user['password'],
+            'created_at': pending_user['created_at'],
+            'is_approved': True,
+            'is_admin': False
+        }
+        users_collection.insert_one(user_data)
+        # Remove from pending collection
+        pending_users_collection.delete_one({'username': username})
+
+def remove_user(username):
+    users_collection.delete_one({'username': username})
+    pending_users_collection.delete_one({'username': username})
+
+def get_pending_users():
+    return list(pending_users_collection.find())
+
+def get_all_users():
+    return list(users_collection.find({'is_approved': True}))
+
+def authenticate_user(username, password):
+    # Check admin users first
+    if username in ADMIN_USERS and ADMIN_USERS[username] == password:
+        return {'username': username, 'is_admin': True, 'is_approved': True}
+    
+    # Check regular users
+    user = get_user_by_username(username)
+    if user and user['password'] == password and user['is_approved']:
+        return {'username': username, 'is_admin': user.get('is_admin', False), 'is_approved': True}
+    
+    return None
 
 # MongoDB timer helpers
 def load_timers():
     timers = {}
     for doc in timers_collection.find():
         timers[doc['name']] = doc
-    return timers
+        return timers
 
 def save_timer(boss_name, timer_data):
     timers_collection.update_one({'name': boss_name}, {'$set': timer_data}, upsert=True)
@@ -172,13 +227,81 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        if USERS.get(username) == password:
+        user = authenticate_user(username, password)
+        if user:
             session['username'] = username
+            session['is_admin'] = user['is_admin']
             flash('Logged in successfully.', 'success')
             return redirect(url_for('index'))
         else:
             flash('Invalid username or password.', 'danger')
     return render_template_string(LOGIN_TEMPLATE, now=datetime.utcnow)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        if not username or not password:
+            flash('Username and password are required.', 'danger')
+            return render_template_string(REGISTER_TEMPLATE)
+        
+        # Check if username already exists
+        if get_user_by_username(username) or username in ADMIN_USERS:
+            flash('Username already exists.', 'danger')
+            return render_template_string(REGISTER_TEMPLATE)
+        
+        # Create pending user
+        pending_user_data = {
+            'username': username,
+            'password': password,
+            'created_at': datetime.utcnow().isoformat()
+        }
+        pending_users_collection.insert_one(pending_user_data)
+        
+        flash('Registration submitted! Please wait for admin approval.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template_string(REGISTER_TEMPLATE)
+
+@app.route('/admin')
+def admin_panel():
+    if 'username' not in session or not session.get('is_admin'):
+        flash('Access denied. Admin privileges required.', 'danger')
+        return redirect(url_for('index'))
+    
+    pending_users = get_pending_users()
+    approved_users = get_all_users()
+    
+    return render_template_string(ADMIN_TEMPLATE, 
+                                pending_users=pending_users, 
+                                approved_users=approved_users,
+                                username=session['username'])
+
+@app.route('/admin/approve/<username>')
+def approve_user_route(username):
+    if 'username' not in session or not session.get('is_admin'):
+        flash('Access denied. Admin privileges required.', 'danger')
+        return redirect(url_for('index'))
+    
+    approve_user(username)
+    flash(f'User {username} approved successfully.', 'success')
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/remove/<username>')
+def remove_user_route(username):
+    if 'username' not in session or not session.get('is_admin'):
+        flash('Access denied. Admin privileges required.', 'danger')
+        return redirect(url_for('index'))
+    
+    if username == session['username']:
+        flash('You cannot remove yourself.', 'danger')
+        return redirect(url_for('admin_panel'))
+    
+    remove_user(username)
+    flash(f'User {username} removed successfully.', 'success')
+    return redirect(url_for('admin_panel'))
 
 @app.route('/logout')
 def logout():
@@ -512,9 +635,13 @@ TEMPLATE = '''
         <div class="topbar">
             {% if username %}
                 <span class="username">Logged in as {{ username }}</span>
+                {% if session.get('is_admin') %}
+                    <a class="button" href="/admin" style="background:linear-gradient(90deg,#f59e0b 0%,#d97706 100%);margin-right:0.5em;">Admin Panel</a>
+                {% endif %}
                 <a class="button" href="/logout">Logout</a>
             {% else %}
                 <a class="button" href="/login">Login</a>
+                <a class="button" href="/register" style="background:linear-gradient(90deg,#10b981 0%,#059669 100%);margin-left:0.5em;">Register</a>
             {% endif %}
         </div>
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -526,52 +653,52 @@ TEMPLATE = '''
         {% endwith %}
         {% if due_bosses %}
         <div class="boss-section">
-            <h2 style="color:#22c55e; text-align:center; margin-top:1em;">Due Bosses</h2>
+        <h2 style="color:#22c55e; text-align:center; margin-top:1em;">Due Bosses</h2>
             <div class="boss-cards">
-                {% for boss in due_bosses %}
+            {% for boss in due_bosses %}
                 <div class="boss-card">
                     <div class="boss-header">
                         <span class="boss-name">{{ boss.name }}</span>
                         <span class="boss-status">Due</span>
                     </div>
                     <div class="boss-info"><span class="boss-label">Last Reset By:</span> <span class="boss-value">{{ boss.last_user }}</span></div>
-                    <div class="boss-info"><span class="boss-label">Next Spawn:</span> <span class="boss-value"><span class="respawn-timer" data-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></span></div>
-                    <div class="boss-info"><span class="boss-label">Window End:</span> <span class="boss-value"><span class="window-timer" data-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></span></div>
+                    <div class="boss-info"><span class="boss-label">Next Spawn:</span> <span class="boss-value"><span class="respawn-timer" id="respawn-{{ boss.name }}" data-initial-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></span></div>
+                    <div class="boss-info"><span class="boss-label">Window End:</span> <span class="boss-value"><span class="window-timer" id="window-{{ boss.name }}" data-initial-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></span></div>
                     <div class="boss-action">
-                        {% if username %}
-                            <a class="button" href="/reset/{{ boss.name }}">Reset</a>
+                    {% if username %}
+                        <a class="button" href="/reset/{{ boss.name }}">Reset</a>
                             <a class="button" href="/edit/{{ boss.name }}" style="margin-left:0.5em;background:linear-gradient(90deg,#2563eb 0%,#3b82f6 100%)">Edit</a>
-                        {% else %}
-                            <a class="button" href="/login">Login to Reset</a>
-                        {% endif %}
+                    {% else %}
+                        <a class="button" href="/login">Login to Reset</a>
+                    {% endif %}
                     </div>
                 </div>
-                {% endfor %}
+            {% endfor %}
             </div>
         </div>
         {% endif %}
         <div class="boss-section">
-            <h2 style="color:#7dd3fc; text-align:center; margin-top:2em;">Upcoming Bosses</h2>
+        <h2 style="color:#7dd3fc; text-align:center; margin-top:2em;">Upcoming Bosses</h2>
             <div class="boss-cards">
-                {% for boss in bosses %}
+            {% for boss in bosses %}
                 <div class="boss-card">
                     <div class="boss-header">
                         <span class="boss-name">{{ boss.name }}</span>
                         <span class="boss-status upcoming">Upcoming</span>
                     </div>
                     <div class="boss-info"><span class="boss-label">Last Reset By:</span> <span class="boss-value">{{ boss.last_user }}</span></div>
-                    <div class="boss-info"><span class="boss-label">Next Spawn:</span> <span class="boss-value"><span class="respawn-timer" data-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></span></div>
-                    <div class="boss-info"><span class="boss-label">Window End:</span> <span class="boss-value"><span class="window-timer" data-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></span></div>
+                    <div class="boss-info"><span class="boss-label">Next Spawn:</span> <span class="boss-value"><span class="respawn-timer" id="respawn-{{ boss.name }}" data-initial-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></span></div>
+                    <div class="boss-info"><span class="boss-label">Window End:</span> <span class="boss-value"><span class="window-timer" id="window-{{ boss.name }}" data-initial-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></span></div>
                     <div class="boss-action">
-                        {% if username %}
-                            <a class="button" href="/reset/{{ boss.name }}">Reset</a>
+                    {% if username %}
+                        <a class="button" href="/reset/{{ boss.name }}">Reset</a>
                             <a class="button" href="/edit/{{ boss.name }}">Edit</a>
-                        {% else %}
-                            <a class="button" href="/login">Login to Reset</a>
-                        {% endif %}
+                    {% else %}
+                        <a class="button" href="/login">Login to Reset</a>
+                    {% endif %}
                     </div>
                 </div>
-                {% endfor %}
+            {% endfor %}
             </div>
         </div>
     </div>
@@ -587,13 +714,29 @@ TEMPLATE = '''
         let s = seconds % 60;
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     }
+    
+    // Store initial timestamps for accurate timing
+    let initialTimestamps = {};
+    
     function updateTimers() {
+        const now = Date.now();
+        
         document.querySelectorAll('.respawn-timer').forEach(function(el) {
-            let seconds = parseInt(el.getAttribute('data-seconds'));
-            if (isNaN(seconds) || el.innerText === 'N/A') return;
-            if (seconds > 0) {
-                el.innerText = formatCountdown(seconds);
-                el.setAttribute('data-seconds', seconds - 1);
+            let initialSeconds = parseInt(el.getAttribute('data-initial-seconds'));
+            let initialTime = initialTimestamps[el.id] || now;
+            
+            if (!initialTimestamps[el.id]) {
+                initialTimestamps[el.id] = now;
+            }
+            
+            if (isNaN(initialSeconds) || el.innerText === 'N/A') return;
+            
+            // Calculate elapsed time and remaining seconds
+            const elapsedSeconds = Math.floor((now - initialTime) / 1000);
+            const remainingSeconds = initialSeconds - elapsedSeconds;
+            
+            if (remainingSeconds > 0) {
+                el.innerText = formatCountdown(remainingSeconds);
                 // Hide window timer if respawn is not ready
                 let windowEl = el.parentElement.parentElement.querySelector('.window-timer');
                 if (windowEl) {
@@ -604,31 +747,65 @@ TEMPLATE = '''
                 // Show window timer if available
                 let windowEl = el.parentElement.parentElement.querySelector('.window-timer');
                 if (windowEl) {
-                    let wSeconds = parseInt(windowEl.getAttribute('data-seconds'));
-                    if (!isNaN(wSeconds) && wSeconds > 0) {
-                        windowEl.innerText = formatCountdown(wSeconds);
-                        windowEl.setAttribute('data-seconds', wSeconds - 1);
-                    } else if (!isNaN(wSeconds) && wSeconds <= 0) {
+                    let wInitialSeconds = parseInt(windowEl.getAttribute('data-initial-seconds'));
+                    let wInitialTime = initialTimestamps[windowEl.id] || now;
+                    
+                    if (!initialTimestamps[windowEl.id]) {
+                        initialTimestamps[windowEl.id] = now;
+                    }
+                    
+                    if (!isNaN(wInitialSeconds) && wInitialSeconds > 0) {
+                        const wElapsedSeconds = Math.floor((now - wInitialTime) / 1000);
+                        const wRemainingSeconds = wInitialSeconds - wElapsedSeconds;
+                        
+                        if (wRemainingSeconds > 0) {
+                            windowEl.innerText = formatCountdown(wRemainingSeconds);
+                        } else {
+                            windowEl.innerText = '';
+                        }
+                    } else {
                         windowEl.innerText = '';
                     }
                 }
             }
         });
+        
         // Also update window timers that are already running
         document.querySelectorAll('.window-timer').forEach(function(el) {
             let respawnEl = el.parentElement.parentElement.querySelector('.respawn-timer');
             if (respawnEl && respawnEl.innerText !== 'Ready!') return; // Only update if respawn is ready
-            let seconds = parseInt(el.getAttribute('data-seconds'));
-            if (isNaN(seconds) || seconds === '' || el.innerText === 'N/A') return;
-            if (seconds > 0) {
-                el.innerText = formatCountdown(seconds);
-                el.setAttribute('data-seconds', seconds - 1);
+            
+            let initialSeconds = parseInt(el.getAttribute('data-initial-seconds'));
+            let initialTime = initialTimestamps[el.id] || now;
+            
+            if (!initialTimestamps[el.id]) {
+                initialTimestamps[el.id] = now;
+            }
+            
+            if (isNaN(initialSeconds) || el.innerText === 'N/A') return;
+            
+            const elapsedSeconds = Math.floor((now - initialTime) / 1000);
+            const remainingSeconds = initialSeconds - elapsedSeconds;
+            
+            if (remainingSeconds > 0) {
+                el.innerText = formatCountdown(remainingSeconds);
             } else {
                 el.innerText = '';
             }
         });
     }
-    setInterval(updateTimers, 1000);
+    
+    // Use setInterval for efficient 60-second updates
+    setInterval(updateTimers, 60000);
+    
+    // Also update on page visibility change to catch up when tab becomes active
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            // Just update timers when tab becomes visible, don't reset timestamps
+            updateTimers();
+        }
+    });
+    
     window.onload = updateTimers;
     </script>
 </body>
@@ -674,6 +851,9 @@ LOGIN_TEMPLATE = '''
             <input type="password" name="password" id="password" required>
             <button type="submit">Login</button>
         </form>
+        <p style="text-align: center; margin-top: 1.5em;">
+            <a href="/register" style="color: #10b981; text-decoration: none; font-weight: 600;">Don't have an account? Register here</a>
+        </p>
         <p><a href="/">Back to Timers</a></p>
     </div>
 </body>
@@ -753,6 +933,160 @@ EDIT_TEMPLATE = '''
             <button type="submit">Reduce Timer</button>
         </form>
         <a href="/">Back to Timers</a>
+    </div>
+</body>
+</html>
+'''
+
+REGISTER_TEMPLATE = '''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Axiom MMO Timers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Montserrat', Arial, sans-serif; background: #181a20; color: #e0e6ed; margin: 0; padding: 0; }
+        .container { max-width: 400px; margin: 40px auto; background: #23262f; padding: 2em; border-radius: 18px; box-shadow: 0 2px 8px #0008; }
+        h2 { text-align: center; margin-bottom: 1.5em; }
+        .info-box { background: #1e293b; padding: 1em; border-radius: 10px; margin-bottom: 1.5em; border-left: 4px solid #3b82f6; }
+        .info-box p { margin: 0; font-size: 0.9em; color: #94a3b8; }
+        form { display: flex; flex-direction: column; gap: 1.5em; }
+        label { font-weight: bold; color: #e0e6ed; }
+        input { padding: 0.8em; border-radius: 8px; border: 1px solid #374151; background: #1f2937; color: #e0e6ed; font-size: 1em; }
+        input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px #3b82f633; }
+        button { background: linear-gradient(90deg, #10b981 0%, #059669 100%); color: #fff; padding: 0.8em; border: none; border-radius: 8px; font-size: 1em; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px #10b98133; transition: background 0.2s, box-shadow 0.2s; outline: none; }
+        button:hover { background: linear-gradient(90deg, #059669 0%, #047857 100%); box-shadow: 0 4px 16px #10b98155; }
+        a { color: #3b82f6; text-decoration: none; text-align: center; margin-top: 1em; display: block; }
+        .flash { padding: 1em; margin-bottom: 1em; border-radius: 8px; font-weight: 600; letter-spacing: 0.5px; }
+        .flash-success { background: #22c55e33; color: #22c55e; }
+        .flash-danger { background: #ef444433; color: #ef4444; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Register for Axiom Timers</h2>
+        <div class="info-box">
+            <p><strong>Important:</strong> Use your main character name as the username. This will be visible to other clan members when you reset timers.</p>
+        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        <form method="post">
+            <label for="username">Character Name (Main Toon):</label>
+            <input type="text" name="username" id="username" required placeholder="Enter your main character name">
+            <label for="password">Password:</label>
+            <input type="password" name="password" id="password" required placeholder="Choose a password">
+            <button type="submit">Register</button>
+        </form>
+        <a href="/login">Already have an account? Login</a>
+    </div>
+</body>
+</html>
+'''
+
+ADMIN_TEMPLATE = '''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Axiom Timers</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Montserrat', Arial, sans-serif; background: #181a20; color: #e0e6ed; margin: 0; padding: 0; }
+        .container { max-width: 95vw; width: 100%; margin: 4vh auto 2vh auto; background: #23262f; padding: 4vw 2vw 3vw 2vw; border-radius: 1.2rem; box-shadow: 0 0.4rem 2.4rem #000a, 0 0.15rem 0.4rem #0004; }
+        h1, h2 { text-align: center; font-weight: 700; letter-spacing: 0.12em; margin-bottom: 1em; }
+        h1 { font-size: 2.2rem; }
+        h2 { font-size: 1.5rem; color: #7dd3fc; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2vh; }
+        .username { font-weight: 600; color: #7dd3fc; font-size: 1.1rem; }
+        .section { margin-bottom: 3em; }
+        .user-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.2em; margin-top: 1.2em; }
+        .user-card { background: #232b3a; border-radius: 1em; box-shadow: 0 0.2em 1em #0003; padding: 1.2em; }
+        .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.7em; }
+        .user-name { font-size: 1.1rem; font-weight: 700; color: #7dd3fc; }
+        .user-date { font-size: 0.9em; color: #94a3b8; }
+        .user-actions { display: flex; gap: 0.5em; }
+        .button { padding: 0.5em 1em; border-radius: 0.5em; text-decoration: none; font-weight: 600; border: none; cursor: pointer; font-size: 0.9rem; }
+        .button.approve { background: linear-gradient(90deg, #10b981 0%, #059669 100%); color: #fff; }
+        .button.remove { background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%); color: #fff; }
+        .button.back { background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); color: #fff; }
+        .flash { padding: 1em; margin-bottom: 1.2em; border-radius: 0.5em; font-weight: 600; letter-spacing: 0.03em; font-size: 1rem; }
+        .flash-success { background: #22c55e33; color: #22c55e; }
+        .flash-danger { background: #ef444433; color: #ef4444; }
+        .empty-state { text-align: center; color: #94a3b8; font-style: italic; padding: 2em; }
+        @media (max-width: 600px) {
+            .container { padding: 2vw 1vw; }
+            h1 { font-size: 1.4rem; }
+            .topbar { flex-direction: column; gap: 1vw; }
+            .user-grid { grid-template-columns: 1fr; }
+            .user-actions { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Panel</h1>
+        <div class="topbar">
+            <span class="username">Logged in as {{ username }}</span>
+            <a class="button back" href="/">Back to Timers</a>
+        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        
+        <div class="section">
+            <h2>Pending Approvals</h2>
+            {% if pending_users %}
+                <div class="user-grid">
+                    {% for user in pending_users %}
+                    <div class="user-card">
+                        <div class="user-header">
+                            <span class="user-name">{{ user.username }}</span>
+                            <span class="user-date">{{ user.created_at[:10] }}</span>
+                        </div>
+                        <div class="user-actions">
+                            <a href="/admin/approve/{{ user.username }}" class="button approve">Approve</a>
+                            <a href="/admin/remove/{{ user.username }}" class="button remove">Remove</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">No pending users to approve.</div>
+            {% endif %}
+        </div>
+        
+        <div class="section">
+            <h2>Approved Users</h2>
+            {% if approved_users %}
+                <div class="user-grid">
+                    {% for user in approved_users %}
+                    <div class="user-card">
+                        <div class="user-header">
+                            <span class="user-name">{{ user.username }}</span>
+                            <span class="user-date">{{ user.created_at[:10] }}</span>
+                        </div>
+                        <div class="user-actions">
+                            <a href="/admin/remove/{{ user.username }}" class="button remove">Remove</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">No approved users.</div>
+            {% endif %}
+        </div>
     </div>
 </body>
 </html>
