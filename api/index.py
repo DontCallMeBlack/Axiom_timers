@@ -207,11 +207,11 @@ def format_remaining(td):
     minutes = (total_seconds % 3600) // 60
     
     if days > 0:
-        return f"{days} day{'s' if days != 1 else ''}, {hours} hour{'s' if hours != 1 else ''}, {minutes} minute{'s' if minutes != 1 else ''}"
+        return f"{days} day{'s' if days != 1 else ''}, {hours} hr{'s' if hours != 1 else ''}, {minutes} min{'s' if minutes != 1 else ''}"
     elif hours > 0:
-        return f"{hours} hour{'s' if hours != 1 else ''}, {minutes} minute{'s' if minutes != 1 else ''}"
+        return f"{hours} hr{'s' if hours != 1 else ''}, {minutes} min{'s' if minutes != 1 else ''}"
     else:
-        return f"{minutes} minute{'s' if minutes != 1 else ''}"
+        return f"{minutes} min{'s' if minutes != 1 else ''}"
 
 @app.errorhandler(Exception)
 def handle_exception(e):
@@ -784,11 +784,11 @@ TEMPLATE = '''
         let minutes = Math.floor((seconds % 3600) / 60);
         
         if (days > 0) {
-            return `${days} day${days !== 1 ? 's' : ''}, ${hours} hour${hours !== 1 ? 's' : ''}, ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+            return `${days} day${days !== 1 ? 's' : ''}, ${hours} hr${hours !== 1 ? 's' : ''}, ${minutes} min${minutes !== 1 ? 's' : ''}`;
         } else if (hours > 0) {
-            return `${hours} hour${hours !== 1 ? 's' : ''}, ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+            return `${hours} hr${hours !== 1 ? 's' : ''}, ${minutes} min${minutes !== 1 ? 's' : ''}`;
         } else {
-            return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+            return `${minutes} min${minutes !== 1 ? 's' : ''}`;
         }
     }
     
