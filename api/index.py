@@ -153,7 +153,7 @@ def load_timers():
     timers = {}
     for doc in timers_collection.find():
         timers[doc['name']] = doc
-        return timers
+    return timers
 
 def save_timer(boss_name, timer_data):
     timers_collection.update_one({'name': boss_name}, {'$set': timer_data}, upsert=True)
