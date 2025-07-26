@@ -156,7 +156,13 @@ def load_timers():
     return timers
 
 def save_timer(boss_name, timer_data):
-    timers_collection.update_one({'name': boss_name}, {'$set': timer_data}, upsert=True)
+    try:
+        result = timers_collection.update_one({'name': boss_name}, {'$set': timer_data}, upsert=True)
+        print(f"MongoDB save result for {boss_name}: {result.modified_count} modified, {result.upserted_id} upserted")
+        return True
+    except Exception as e:
+        print(f"Error saving timer for {boss_name}: {e}")
+        return False
 
 def get_boss_by_name(name):
     for boss in BOSSES:
@@ -336,19 +342,26 @@ def reset(boss_name):
         flash('Boss not found.', 'danger')
         return redirect(url_for('index'))
     if request.method == 'POST':
-        kill_dt = datetime.utcnow()
-        spawn_dt = kill_dt + timedelta(minutes=boss['respawn_minutes'])
-        window_end_dt = spawn_dt + timedelta(minutes=boss['window_minutes'])
-        timer_data = {
-            "name": boss_name,
-            "kill_time": kill_dt.isoformat(),
-            "spawn_time": spawn_dt.isoformat(),
-            "window_end_time": window_end_dt.isoformat(),
-            "user": session['username']
-        }
-        save_timer(boss_name, timer_data)
-        flash(f'{boss_name} timer reset!', 'success')
-        return redirect(url_for('index'))
+        try:
+            kill_dt = datetime.utcnow()
+            spawn_dt = kill_dt + timedelta(minutes=boss['respawn_minutes'])
+            window_end_dt = spawn_dt + timedelta(minutes=boss['window_minutes'])
+            timer_data = {
+                "name": boss_name,
+                "kill_time": kill_dt.isoformat(),
+                "spawn_time": spawn_dt.isoformat(),
+                "window_end_time": window_end_dt.isoformat(),
+                "user": session['username']
+            }
+            print(f"Resetting timer for {boss_name}: {timer_data}")
+            save_timer(boss_name, timer_data)
+            print(f"Timer saved successfully for {boss_name}")
+            flash(f'{boss_name} timer reset!', 'success')
+            return redirect(url_for('index'))
+        except Exception as e:
+            print(f"Error resetting timer for {boss_name}: {e}")
+            flash(f'Error resetting timer: {str(e)}', 'danger')
+            return redirect(url_for('index'))
     return render_template_string(RESET_TEMPLATE, boss=boss, now_func=datetime.utcnow)
 
 @app.route('/edit/<boss_name>', methods=['GET', 'POST'])
