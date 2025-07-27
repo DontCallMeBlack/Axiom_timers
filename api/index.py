@@ -139,31 +139,101 @@ def create_user(username, password):
     users_collection.insert_one(user_data)
 
 def approve_user(username):
-    # Get the pending user data
-    pending_user = pending_users_collection.find_one({'username': username})
-    if pending_user:
-        # Create the approved user in the users collection
-        user_data = {
-            'username': pending_user['username'],
-            'password': pending_user['password'],
-            'created_at': pending_user['created_at'],
-            'is_approved': True,
-            'is_admin': False
-        }
-        users_collection.insert_one(user_data)
-        # Remove from pending collection
-        pending_users_collection.delete_one({'username': username})
+    try:
+        logger.info(f"Attempting to approve user: '{username}'")
+        logger.info(f"Username type: {type(username)}, length: {len(username)}")
+        logger.info(f"Username bytes: {username.encode('utf-8')}")
+        
+        # Get the pending user data - try exact match first
+        pending_user = pending_users_collection.find_one({'username': username})
+        logger.info(f"Pending user found with exact match: {pending_user is not None}")
+        
+        # If not found, try with stripped whitespace
+        if not pending_user:
+            stripped_username = username.strip()
+            if stripped_username != username:
+                logger.info(f"Trying with stripped username: '{stripped_username}'")
+                pending_user = pending_users_collection.find_one({'username': stripped_username})
+                logger.info(f"Pending user found with stripped username: {pending_user is not None}")
+        
+        if pending_user:
+            logger.info(f"Found pending user: {pending_user}")
+            # Create the approved user in the users collection
+            user_data = {
+                'username': pending_user['username'],
+                'password': pending_user['password'],
+                'created_at': pending_user['created_at'],
+                'is_approved': True,
+                'is_admin': False
+            }
+            logger.info(f"Creating approved user data: {user_data}")
+            users_collection.insert_one(user_data)
+            logger.info(f"User inserted into users collection")
+            
+            # Remove from pending collection using the username that was found
+            pending_users_collection.delete_one({'username': pending_user['username']})
+            logger.info(f"User removed from pending collection")
+            return True
+        else:
+            logger.error(f"No pending user found for username: '{username}'")
+            # Let's also check what users are actually in the pending collection
+            all_pending = list(pending_users_collection.find())
+            logger.info(f"All pending users: {[u.get('username', 'NO_USERNAME') for u in all_pending]}")
+            return False
+    except Exception as e:
+        logger.error(f"Error approving user '{username}': {e}")
+        return False
 
 def remove_user(username):
+    logger.info(f"Attempting to remove user: '{username}'")
+    logger.info(f"Username type: {type(username)}, length: {len(username)}")
+    
+    # Check if user exists in pending collection
+    pending_user = pending_users_collection.find_one({'username': username})
+    logger.info(f"Pending user found for removal: {pending_user is not None}")
+    
+    # If not found in pending, try with stripped whitespace
+    if not pending_user:
+        stripped_username = username.strip()
+        if stripped_username != username:
+            logger.info(f"Trying to remove with stripped username: '{stripped_username}'")
+            pending_user = pending_users_collection.find_one({'username': stripped_username})
+            logger.info(f"Pending user found with stripped username: {pending_user is not None}")
+    
+    # Check if user exists in approved collection
+    approved_user = users_collection.find_one({'username': username})
+    logger.info(f"Approved user found for removal: {approved_user is not None}")
+    
+    # If not found in approved, try with stripped whitespace
+    if not approved_user:
+        stripped_username = username.strip()
+        if stripped_username != username:
+            logger.info(f"Trying to remove approved user with stripped username: '{stripped_username}'")
+            approved_user = users_collection.find_one({'username': stripped_username})
+            logger.info(f"Approved user found with stripped username: {approved_user is not None}")
+    
+    # Remove from both collections using the username that was found
+    if pending_user:
+        pending_users_collection.delete_one({'username': pending_user['username']})
+        logger.info(f"Removed from pending collection: '{pending_user['username']}'")
+    
+    if approved_user:
+        users_collection.delete_one({'username': approved_user['username']})
+        logger.info(f"Removed from approved collection: '{approved_user['username']}'")
+    
+    # Also try to remove with the original username
     users_collection.delete_one({'username': username})
     pending_users_collection.delete_one({'username': username})
+    
+    logger.info(f"User '{username}' removal completed")
 
 def get_pending_users():
     try:
         users = list(pending_users_collection.find())
         logger.info(f"Found {len(users)} pending users in database")
         for user in users:
-            logger.info(f"Pending user: {user.get('username', 'NO_USERNAME')}")
+            username = user.get('username', 'NO_USERNAME')
+            logger.info(f"Pending user: '{username}' (type: {type(username)}, length: {len(username)})")
         return users
     except Exception as e:
         logger.error(f"Error getting pending users: {e}")
@@ -246,6 +316,102 @@ def debug_users():
             'approved_users': [{'username': u.get('username'), 'created_at': u.get('created_at')} for u in approved],
             'total_pending': len(pending),
             'total_approved': len(approved)
+        }
+        
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return f"Error: {str(e)}", 500
+
+@app.route('/debug/check-user/<username>')
+def debug_check_user(username):
+    if 'username' not in session or not session.get('is_admin'):
+        return "Access denied", 403
+    
+    try:
+        decoded_username = unquote(username)
+        
+        # Check in pending collection
+        pending_user = pending_users_collection.find_one({'username': decoded_username})
+        
+        # Check in approved collection
+        approved_user = users_collection.find_one({'username': decoded_username})
+        
+        # Get all pending usernames for comparison
+        all_pending = list(pending_users_collection.find())
+        all_pending_usernames = [u.get('username', 'NO_USERNAME') for u in all_pending]
+        
+        result = {
+            'search_username': decoded_username,
+            'search_username_encoded': username,
+            'pending_user_found': pending_user is not None,
+            'approved_user_found': approved_user is not None,
+            'all_pending_usernames': all_pending_usernames,
+            'pending_user_data': pending_user,
+            'approved_user_data': approved_user
+        }
+        
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return f"Error: {str(e)}", 500
+
+@app.route('/debug/test-username/<username>')
+def debug_test_username(username):
+    if 'username' not in session or not session.get('is_admin'):
+        return "Access denied", 403
+    
+    try:
+        decoded_username = unquote(username)
+        
+        # Test exact match
+        exact_match = pending_users_collection.find_one({'username': decoded_username})
+        
+        # Test with different variations
+        variations = [
+            decoded_username,
+            decoded_username.strip(),
+            decoded_username.lower(),
+            decoded_username.upper(),
+            decoded_username.replace(' ', ''),
+            decoded_username.replace(' ', '_'),
+        ]
+        
+        results = {}
+        for var in variations:
+            results[var] = pending_users_collection.find_one({'username': var}) is not None
+        
+        # Get all usernames for comparison
+        all_users = list(pending_users_collection.find())
+        all_usernames = [u.get('username', 'NO_USERNAME') for u in all_users]
+        
+        result = {
+            'search_username': decoded_username,
+            'search_username_encoded': username,
+            'exact_match_found': exact_match is not None,
+            'variations_tested': results,
+            'all_usernames_in_db': all_usernames,
+            'exact_match_data': exact_match
+        }
+        
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return f"Error: {str(e)}", 500
+
+@app.route('/debug/manual-approve/<username>')
+def debug_manual_approve(username):
+    if 'username' not in session or not session.get('is_admin'):
+        return "Access denied", 403
+    
+    try:
+        decoded_username = unquote(username)
+        logger.info(f"Manual approve test for username: '{decoded_username}'")
+        
+        # Try to approve the user
+        success = approve_user(decoded_username)
+        
+        result = {
+            'username': decoded_username,
+            'success': success,
+            'message': f"User '{decoded_username}' {'approved' if success else 'not approved'}"
         }
         
         return json.dumps(result, indent=2)
@@ -341,11 +507,21 @@ def register():
         username = request.form.get('username')
         password = request.form.get('password')
         
+        logger.info(f"Registration - Raw username from form: '{username}'")
+        logger.info(f"Registration - Raw password from form: '{password}'")
+        
         # Decode URL-encoded username and password
         if username:
             username = unquote(username)
         if password:
             password = unquote(password)
+        
+        logger.info(f"Registration - Decoded username: '{username}'")
+        logger.info(f"Registration - Username type: {type(username)}, length: {len(username)}")
+        
+        # Trim whitespace from username
+        username = username.strip()
+        logger.info(f"Registration - Trimmed username: '{username}'")
         
         if not username or not password:
             flash('Username and password are required.', 'danger')
@@ -362,7 +538,9 @@ def register():
             'password': password,
             'created_at': datetime.utcnow().isoformat()
         }
+        logger.info(f"Registration - Creating pending user data: {pending_user_data}")
         pending_users_collection.insert_one(pending_user_data)
+        logger.info(f"Registration - User '{username}' inserted into pending collection")
         
         flash('Registration submitted! Please wait for admin approval.', 'success')
         return redirect(url_for('login'))
@@ -379,7 +557,8 @@ def admin_panel():
     approved_users = get_all_users()
     
     # Debug: Log pending users
-    logger.info(f"Pending users found: {[user['username'] for user in pending_users]}")
+    logger.info(f"Admin panel - Pending users found: {[user['username'] for user in pending_users]}")
+    logger.info(f"Admin panel - Approved users found: {[user['username'] for user in approved_users]}")
     
     return render_template_string(ADMIN_TEMPLATE, 
                                 pending_users=pending_users, 
@@ -394,8 +573,16 @@ def approve_user_route(username):
     
     # Decode URL-encoded username
     decoded_username = unquote(username)
-    approve_user(decoded_username)
-    flash(f'User {decoded_username} approved successfully.', 'success')
+    logger.info(f"Admin approve route - Original username: '{username}'")
+    logger.info(f"Admin approve route - Decoded username: '{decoded_username}'")
+    
+    success = approve_user(decoded_username)
+    
+    if success:
+        flash(f'User {decoded_username} approved successfully.', 'success')
+    else:
+        flash(f'Failed to approve user {decoded_username}. User may not exist in pending list.', 'danger')
+    
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/remove/<username>')
@@ -406,6 +593,8 @@ def remove_user_route(username):
     
     # Decode URL-encoded username
     decoded_username = unquote(username)
+    logger.info(f"Admin remove route - Original username: '{username}'")
+    logger.info(f"Admin remove route - Decoded username: '{decoded_username}'")
     
     if decoded_username == session['username']:
         flash('You cannot remove yourself.', 'danger')
