@@ -290,6 +290,13 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        
+        # Decode URL-encoded username and password
+        if username:
+            username = unquote(username)
+        if password:
+            password = unquote(password)
+            
         user = authenticate_user(username, password)
         if user:
             session['username'] = username
@@ -305,6 +312,12 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        
+        # Decode URL-encoded username and password
+        if username:
+            username = unquote(username)
+        if password:
+            password = unquote(password)
         
         if not username or not password:
             flash('Username and password are required.', 'danger')
