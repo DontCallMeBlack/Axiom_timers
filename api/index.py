@@ -426,7 +426,9 @@ def index():
     timers = load_timers()
     now = datetime.utcnow()
     due_bosses = []
-    not_due_bosses = []
+    upcoming_bosses = []
+    lost_bosses = []
+    
     for boss in BOSSES:
         timer_entry = timers.get(boss['name'])
         if timer_entry:
@@ -439,6 +441,7 @@ def index():
             last_user = 'N/A'
             spawn_time = None
             window_end_time = None
+        
         if last_kill:
             last_kill_dt = datetime.fromisoformat(last_kill)
             if spawn_time:
@@ -449,6 +452,7 @@ def index():
                 window_end_dt = datetime.fromisoformat(window_end_time)
             else:
                 window_end_dt = spawn_dt + timedelta(minutes=boss['window_minutes'])
+            
             respawn_remaining = spawn_dt - now
             window_remaining = window_end_dt - now
             respawn_seconds = int(respawn_remaining.total_seconds())
@@ -456,12 +460,15 @@ def index():
         else:
             respawn_remaining = window_remaining = None
             respawn_seconds = window_seconds = None
-        if last_kill and respawn_remaining.total_seconds() <= 0:
+        
+        # Determine window display
+        if last_kill and respawn_remaining and respawn_remaining.total_seconds() <= 0:
             window_end_display = format_remaining(window_remaining)
             window_seconds_display = window_seconds
         else:
             window_end_display = ''
             window_seconds_display = ''
+        
         boss_info = {
             'name': boss['name'],
             'respawn': format_remaining(respawn_remaining) if last_kill else 'N/A',
@@ -471,13 +478,40 @@ def index():
             'last_kill': last_kill_dt.strftime('%Y-%m-%d %H:%M UTC') if last_kill else 'N/A',
             'last_user': last_user,
         }
-        if last_kill and respawn_seconds is not None and respawn_seconds <= 0:
-            due_bosses.append(boss_info)
+        
+        # Categorize bosses based on their timer status
+        if last_kill and respawn_seconds is not None:
+            if respawn_seconds <= 0:
+                # Boss is in respawn time (spawned)
+                if window_seconds is not None and window_seconds <= 0:
+                    # Both respawn and window time are done - Lost timer
+                    lost_bosses.append(boss_info)
+                else:
+                    # Boss is spawned but window is still active - Due boss
+                    due_bosses.append(boss_info)
+            else:
+                # Boss is still in respawn time - Upcoming boss
+                upcoming_bosses.append(boss_info)
         else:
-            not_due_bosses.append(boss_info)
-    not_due_bosses.sort(key=lambda b: b['respawn_seconds'] if isinstance(b['respawn_seconds'], int) and b['respawn_seconds'] > 0 else float('inf'))
+            # No timer set - Upcoming boss
+            upcoming_bosses.append(boss_info)
+    
+    # Sort upcoming bosses by respawn time (earliest first)
+    upcoming_bosses.sort(key=lambda b: b['respawn_seconds'] if isinstance(b['respawn_seconds'], int) and b['respawn_seconds'] > 0 else float('inf'))
+    
+    # Sort due bosses by window time (earliest first)
+    due_bosses.sort(key=lambda b: b['window_seconds'] if isinstance(b['window_seconds'], int) and b['window_seconds'] > 0 else float('inf'))
+    
+    # Sort lost bosses by last kill time (most recent first)
+    lost_bosses.sort(key=lambda b: b['last_kill'], reverse=True)
+    
     username = session.get('username')
-    return render_template_string(TEMPLATE, bosses=not_due_bosses, due_bosses=due_bosses, username=username, now=datetime.utcnow)
+    return render_template_string(TEMPLATE, 
+                                due_bosses=due_bosses, 
+                                upcoming_bosses=upcoming_bosses, 
+                                lost_bosses=lost_bosses,
+                                username=username, 
+                                now=datetime.utcnow)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -770,6 +804,10 @@ TEMPLATE = '''
             background: #2563eb33;
             color: #3b82f6;
         }
+        .boss-status.lost {
+            background: #ef444433;
+            color: #ef4444;
+        }
         .boss-info {
             margin-bottom: 0.5em;
             width: 100%;
@@ -988,7 +1026,7 @@ TEMPLATE = '''
         <div class="boss-section">
         <h2 style="color:#7dd3fc; text-align:center; margin-top:2em;">Upcoming Bosses</h2>
             <div class="boss-cards">
-            {% for boss in bosses %}
+            {% for boss in upcoming_bosses %}
                 <div class="boss-card">
                     <div class="boss-header">
                         <span class="boss-name">{{ boss.name }}</span>
@@ -1009,6 +1047,30 @@ TEMPLATE = '''
             {% endfor %}
             </div>
         </div>
+        {% if lost_bosses %}
+        <div class="boss-section">
+        <h2 style="color:#ef4444; text-align:center; margin-top:2em;">Lost Bosses</h2>
+            <div class="boss-cards">
+            {% for boss in lost_bosses %}
+                <div class="boss-card">
+                    <div class="boss-header">
+                        <span class="boss-name">{{ boss.name }}</span>
+                        <span class="boss-status lost">Lost</span>
+                    </div>
+                    <div class="boss-info"><span class="boss-label">Last Kill:</span> <span class="boss-value">{{ boss.last_kill }}</span></div>
+                    <div class="boss-info"><span class="boss-label">Last Reset By:</span> <span class="boss-value">{{ boss.last_user }}</span></div>
+                    <div class="boss-action">
+                    {% if username %}
+                        <a class="button" href="/reset/{{ boss.name }}">Reset</a>
+                    {% else %}
+                        <a class="button" href="/login">Login to Reset</a>
+                    {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
     <footer>
         &copy; {{ now().year }} Axiom Clan Timers &mdash; Powered by Flask
