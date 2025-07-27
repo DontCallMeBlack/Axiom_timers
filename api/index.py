@@ -159,7 +159,15 @@ def remove_user(username):
     pending_users_collection.delete_one({'username': username})
 
 def get_pending_users():
-    return list(pending_users_collection.find())
+    try:
+        users = list(pending_users_collection.find())
+        logger.info(f"Found {len(users)} pending users in database")
+        for user in users:
+            logger.info(f"Pending user: {user.get('username', 'NO_USERNAME')}")
+        return users
+    except Exception as e:
+        logger.error(f"Error getting pending users: {e}")
+        return []
 
 def get_all_users():
     return list(users_collection.find({'is_approved': True}))
@@ -223,6 +231,26 @@ def handle_exception(e):
 @app.route('/health')
 def health_check():
     return "OK", 200
+
+@app.route('/debug/users')
+def debug_users():
+    if 'username' not in session or not session.get('is_admin'):
+        return "Access denied", 403
+    
+    try:
+        pending = list(pending_users_collection.find())
+        approved = list(users_collection.find())
+        
+        result = {
+            'pending_users': [{'username': u.get('username'), 'created_at': u.get('created_at')} for u in pending],
+            'approved_users': [{'username': u.get('username'), 'created_at': u.get('created_at')} for u in approved],
+            'total_pending': len(pending),
+            'total_approved': len(approved)
+        }
+        
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return f"Error: {str(e)}", 500
 
 @app.route('/', methods=['GET'])
 def index():
@@ -349,6 +377,9 @@ def admin_panel():
     
     pending_users = get_pending_users()
     approved_users = get_all_users()
+    
+    # Debug: Log pending users
+    logger.info(f"Pending users found: {[user['username'] for user in pending_users]}")
     
     return render_template_string(ADMIN_TEMPLATE, 
                                 pending_users=pending_users, 
