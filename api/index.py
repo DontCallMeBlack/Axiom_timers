@@ -4,6 +4,7 @@ import os
 import sys
 from datetime import datetime, timedelta
 import logging
+from urllib.parse import unquote
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -347,8 +348,10 @@ def approve_user_route(username):
         flash('Access denied. Admin privileges required.', 'danger')
         return redirect(url_for('index'))
     
-    approve_user(username)
-    flash(f'User {username} approved successfully.', 'success')
+    # Decode URL-encoded username
+    decoded_username = unquote(username)
+    approve_user(decoded_username)
+    flash(f'User {decoded_username} approved successfully.', 'success')
     return redirect(url_for('admin_panel'))
 
 @app.route('/admin/remove/<username>')
@@ -357,12 +360,15 @@ def remove_user_route(username):
         flash('Access denied. Admin privileges required.', 'danger')
         return redirect(url_for('index'))
     
-    if username == session['username']:
+    # Decode URL-encoded username
+    decoded_username = unquote(username)
+    
+    if decoded_username == session['username']:
         flash('You cannot remove yourself.', 'danger')
         return redirect(url_for('admin_panel'))
     
-    remove_user(username)
-    flash(f'User {username} removed successfully.', 'success')
+    remove_user(decoded_username)
+    flash(f'User {decoded_username} removed successfully.', 'success')
     return redirect(url_for('admin_panel'))
 
 @app.route('/logout')
