@@ -66,22 +66,22 @@ if client is None:
 BOSSES = [
     {
         'name': '170',
-        'respawn_minutes': 80,
+        'respawn_minutes': 75,
         'window_minutes': 5
     },
     {
         'name': '180',
-        'respawn_minutes': 90,
+        'respawn_minutes': 85,
         'window_minutes': 5
     },
     {
         'name': '210',
-        'respawn_minutes': 125,
+        'respawn_minutes': 120,
         'window_minutes': 5
     },
     {
         'name': '215',
-        'respawn_minutes': 135,
+        'respawn_minutes': 130,
         'window_minutes': 5
     },
         {
@@ -91,13 +91,13 @@ BOSSES = [
     },
     {
         'name': 'Dino',
-        'respawn_minutes': 1680,
-        'window_minutes': 960
+        'respawn_minutes': 2040,
+        'window_minutes': 1640
     },
     {
         'name': 'Bloodthorn',
-        'respawn_minutes': 1680,
-        'window_minutes': 960
+        'respawn_minutes': 2040,
+        'window_minutes': 1640
     },
     {
         'name': 'Gelebron',
