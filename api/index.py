@@ -832,7 +832,7 @@ TEMPLATE = '''
             margin-top: 0.7em;
             display: flex;
             justify-content: flex-end;
-            gap: 2em;
+            gap: 8em;
         }
         .boss-action a.button, .boss-action button {
             background: linear-gradient(90deg, #ff512f 0%, #dd2476 100%);
