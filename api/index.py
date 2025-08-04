@@ -75,6 +75,11 @@ BOSSES = [
         'window_minutes': 5
     },
     {
+        'name': 'Mordy',
+        'respawn_minutes': 1200,
+        'window_minutes': 960
+    },
+    {
         'name': '210',
         'respawn_minutes': 123,
         'window_minutes': 5
