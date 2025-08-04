@@ -836,7 +836,7 @@ TEMPLATE = '''
         .boss-action a.button, .boss-action button {
             background: linear-gradient(90deg, #ff512f 0%, #dd2476 100%);
             color: #fff;
-            padding: 0.56em 1.04em; /* 20% smaller than 0.7em 1.3em */
+            padding: 0.7em 1.3em;
             border-radius: 0.5em;
             text-decoration: none;
             font-weight: 700;
@@ -847,7 +847,7 @@ TEMPLATE = '''
             outline: none;
             display: inline-block;
             margin: 0.3em 0;
-            font-size: 0.88rem; /* 20% smaller than 1.1rem */
+            font-size: 1.1rem;
             letter-spacing: 0.03em;
             position: relative;
             overflow: hidden;
