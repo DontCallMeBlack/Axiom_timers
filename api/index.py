@@ -1013,12 +1013,11 @@ TEMPLATE = '''
                         <span class="boss-status">Due</span>
                     </div>
                     <div class="boss-info"><span class="boss-label">Last Reset By:</span> <span class="boss-value">{{ boss.last_user }}</span></div>
-                    <div class="boss-info"><span class="boss-label">Next Spawn:</span> <span class="boss-value"><span class="respawn-timer" id="respawn-{{ boss.name }}" data-initial-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></span></div>
                     <div class="boss-info"><span class="boss-label">Window End:</span> <span class="boss-value"><span class="window-timer" id="window-{{ boss.name }}" data-initial-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></span></div>
                     <div class="boss-action">
                     {% if username %}
                         <a class="button" href="/reset/{{ boss.name }}">Reset</a>
-                            <a class="button" href="/edit/{{ boss.name }}" style="margin-left:0.5em;background:linear-gradient(90deg,#2563eb 0%,#3b82f6 100%)">Edit</a>
+                        <a class="button" href="/edit/{{ boss.name }}" style="margin-left:0.5em;background:linear-gradient(90deg,#2563eb 0%,#3b82f6 100%)">Edit</a>
                     {% else %}
                         <a class="button" href="/login">Login to Reset</a>
                     {% endif %}
@@ -1039,11 +1038,10 @@ TEMPLATE = '''
                     </div>
                     <div class="boss-info"><span class="boss-label">Last Reset By:</span> <span class="boss-value">{{ boss.last_user }}</span></div>
                     <div class="boss-info"><span class="boss-label">Next Spawn:</span> <span class="boss-value"><span class="respawn-timer" id="respawn-{{ boss.name }}" data-initial-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></span></div>
-                    <div class="boss-info"><span class="boss-label">Window End:</span> <span class="boss-value"><span class="window-timer" id="window-{{ boss.name }}" data-initial-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></span></div>
                     <div class="boss-action">
                     {% if username %}
                         <a class="button" href="/reset/{{ boss.name }}">Reset</a>
-                            <a class="button" href="/edit/{{ boss.name }}">Edit</a>
+                        <a class="button" href="/edit/{{ boss.name }}">Edit</a>
                     {% else %}
                         <a class="button" href="/login">Login to Reset</a>
                     {% endif %}
@@ -1474,4 +1472,4 @@ ADMIN_TEMPLATE = '''
     </div>
 </body>
 </html>
-''' 
+'''
