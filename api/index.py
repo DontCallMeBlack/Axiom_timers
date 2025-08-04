@@ -1014,19 +1014,7 @@ TEMPLATE = '''
                     </div>
                     <div class="boss-info"><span class="boss-label">Last Reset By:</span> <span class="boss-value">{{ boss.last_user }}</span></div>
                     <div class="boss-info"><span class="boss-label">Next Spawn:</span> <span class="boss-value"><span class="respawn-timer" id="respawn-{{ boss.name }}" data-initial-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></span></div>
-                    <div class="progress-container">
-                        <div class="progress-bar">
-                            <div class="progress-fill respawn-progress" id="respawn-progress-{{ boss.name }}" data-initial-seconds="{{ boss.respawn_seconds }}" data-total-seconds="{{ boss.respawn_seconds }}"></div>
-                        </div>
-                        <div class="progress-text respawn-progress-text" id="respawn-progress-text-{{ boss.name }}"></div>
-                    </div>
                     <div class="boss-info"><span class="boss-label">Window End:</span> <span class="boss-value"><span class="window-timer" id="window-{{ boss.name }}" data-initial-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></span></div>
-                    <div class="progress-container window-progress-container" id="window-progress-container-{{ boss.name }}" style="display: none;">
-                        <div class="progress-bar">
-                            <div class="progress-fill window-progress" id="window-progress-{{ boss.name }}" data-initial-seconds="{{ boss.window_seconds }}" data-total-seconds="{{ boss.window_seconds }}"></div>
-                        </div>
-                        <div class="progress-text window-progress-text" id="window-progress-text-{{ boss.name }}"></div>
-                    </div>
                     <div class="boss-action">
                     {% if username %}
                         <a class="button" href="/reset/{{ boss.name }}">Reset</a>
@@ -1051,19 +1039,7 @@ TEMPLATE = '''
                     </div>
                     <div class="boss-info"><span class="boss-label">Last Reset By:</span> <span class="boss-value">{{ boss.last_user }}</span></div>
                     <div class="boss-info"><span class="boss-label">Next Spawn:</span> <span class="boss-value"><span class="respawn-timer" id="respawn-{{ boss.name }}" data-initial-seconds="{{ boss.respawn_seconds }}">{{ boss.respawn }}</span></span></div>
-                    <div class="progress-container">
-                        <div class="progress-bar">
-                            <div class="progress-fill respawn-progress" id="respawn-progress-{{ boss.name }}" data-initial-seconds="{{ boss.respawn_seconds }}" data-total-seconds="{{ boss.respawn_seconds }}"></div>
-                        </div>
-                        <div class="progress-text respawn-progress-text" id="respawn-progress-text-{{ boss.name }}"></div>
-                    </div>
                     <div class="boss-info"><span class="boss-label">Window End:</span> <span class="boss-value"><span class="window-timer" id="window-{{ boss.name }}" data-initial-seconds="{{ boss.window_seconds }}">{{ boss.window_end }}</span></span></div>
-                    <div class="progress-container window-progress-container" id="window-progress-container-{{ boss.name }}" style="display: none;">
-                        <div class="progress-bar">
-                            <div class="progress-fill window-progress" id="window-progress-{{ boss.name }}" data-initial-seconds="{{ boss.window_seconds }}" data-total-seconds="{{ boss.window_seconds }}"></div>
-                        </div>
-                        <div class="progress-text window-progress-text" id="window-progress-text-{{ boss.name }}"></div>
-                    </div>
                     <div class="boss-action">
                     {% if username %}
                         <a class="button" href="/reset/{{ boss.name }}">Reset</a>
@@ -1176,32 +1152,6 @@ TEMPLATE = '''
                     }
                 }
             }
-            
-            // Update progress bar
-            let progressEl = document.getElementById('respawn-progress-' + el.id.replace('respawn-', ''));
-            let progressTextEl = document.getElementById('respawn-progress-text-' + el.id.replace('respawn-', ''));
-            if (progressEl && progressTextEl) {
-                const totalSeconds = parseInt(progressEl.getAttribute('data-total-seconds'));
-                if (!isNaN(totalSeconds) && totalSeconds > 0) {
-                    const progressPercent = Math.max(0, Math.min(100, (remainingSeconds / totalSeconds) * 100));
-                    progressEl.style.width = progressPercent + '%';
-                    
-                    // Update progress bar color based on time remaining
-                    progressEl.className = 'progress-fill respawn-progress';
-                    if (remainingSeconds <= 0) {
-                        progressEl.classList.add('ready');
-                        progressTextEl.innerText = 'Ready!';
-                    } else if (remainingSeconds <= 300) { // 5 minutes
-                        progressEl.classList.add('urgent');
-                        progressTextEl.innerText = 'URGENT!';
-                    } else if (remainingSeconds <= 1800) { // 30 minutes
-                        progressEl.classList.add('warning');
-                        progressTextEl.innerText = 'Getting close...';
-                    } else {
-                        progressTextEl.innerText = Math.round(progressPercent) + '% remaining';
-                    }
-                }
-            }
         });
         
         // Also update window timers that are already running
@@ -1225,32 +1175,6 @@ TEMPLATE = '''
                 el.innerText = formatCountdown(remainingSeconds);
             } else {
                 el.innerText = '';
-            }
-            
-            // Update window progress bar
-            let windowProgressEl = document.getElementById('window-progress-' + el.id.replace('window-', ''));
-            let windowProgressTextEl = document.getElementById('window-progress-text-' + el.id.replace('window-', ''));
-            if (windowProgressEl && windowProgressTextEl) {
-                const totalSeconds = parseInt(windowProgressEl.getAttribute('data-total-seconds'));
-                if (!isNaN(totalSeconds) && totalSeconds > 0) {
-                    const progressPercent = Math.max(0, Math.min(100, (remainingSeconds / totalSeconds) * 100));
-                    windowProgressEl.style.width = progressPercent + '%';
-                    
-                    // Update window progress bar color
-                    windowProgressEl.className = 'progress-fill window-progress';
-                    if (remainingSeconds <= 0) {
-                        windowProgressEl.classList.add('expired');
-                        windowProgressTextEl.innerText = 'Window expired';
-                    } else if (remainingSeconds <= 300) { // 5 minutes
-                        windowProgressEl.classList.add('urgent');
-                        windowProgressTextEl.innerText = 'Window closing soon!';
-                    } else if (remainingSeconds <= 1800) { // 30 minutes
-                        windowProgressEl.classList.add('warning');
-                        windowProgressTextEl.innerText = 'Window active';
-                    } else {
-                        windowProgressTextEl.innerText = Math.round(progressPercent) + '% window remaining';
-                    }
-                }
             }
         });
     }
