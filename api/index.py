@@ -66,12 +66,12 @@ if client is None:
 BOSSES = [
     {
         'name': '170',
-        'respawn_minutes': 71,
+        'respawn_minutes': 80,
         'window_minutes': 5
     },
     {
         'name': '180',
-        'respawn_minutes': 86,
+        'respawn_minutes': 90,
         'window_minutes': 5
     },
     {
@@ -81,12 +81,12 @@ BOSSES = [
     },
     {
         'name': '210',
-        'respawn_minutes': 123,
+        'respawn_minutes': 130,
         'window_minutes': 5
     },
     {
         'name': '215',
-        'respawn_minutes': 132,
+        'respawn_minutes': 135,
         'window_minutes': 5
     },
         {
