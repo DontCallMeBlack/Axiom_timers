@@ -79,6 +79,10 @@ BOSSES = [
         'respawn_minutes': 1200,
         'window_minutes': 960
     },
+    {'name': 'Hrung',
+        'respawn_minutes': 1320,
+        'window_minutes': 1080
+    },
     {
         'name': '210',
         'respawn_minutes': 130,
@@ -112,7 +116,7 @@ BOSSES = [
     {
         'name': 'Crom',
         'respawn_minutes': 5760,
-        'window_minutes': 1440
+        'window_minutes': 1440  
     }
 
 ] 
