@@ -2,7 +2,8 @@ from flask import Flask, render_template_string, request, redirect, url_for, fla
 import json
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from .timezone_utils import parse_timestamp, get_current_utc
 import logging
 from urllib.parse import unquote
 import traceback
@@ -25,33 +26,62 @@ except ImportError as e:
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'change_this')
 
-# MongoDB setup
+# MongoDB setup and connection management
 MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017')
 logger.info(f"Using MONGO_URI ending with: ...{MONGO_URI[-20:] if MONGO_URI else 'None'}")
 client = None
+db = None
+timers_collection = None
+users_collection = None
+pending_users_collection = None
 
-if MONGODB_AVAILABLE:
+def get_mongodb_client():
+    global client, db, timers_collection, users_collection, pending_users_collection
+    
+    if not MONGODB_AVAILABLE:
+        logger.error("MongoDB is not available (pymongo not installed)")
+        return None
+        
     try:
-        logger.info("Attempting MongoDB connection...")
-        client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+        if client is None:
+            logger.info("Initializing new MongoDB connection...")
+            client = MongoClient(
+                MONGO_URI,
+                serverSelectionTimeoutMS=5000,
+                connectTimeoutMS=5000,
+                socketTimeoutMS=5000,
+                maxIdleTimeMS=50000,
+                retryWrites=True
+            )
+            
         # Test the connection
-        logger.info("Testing MongoDB connection with ping...")
         client.admin.command('ping')
-        db = client['axiom']
-        timers_collection = db['timers']
-        users_collection = db['users']
-        pending_users_collection = db['pending_users']
-        logger.info(f"MongoDB connected successfully to cluster")
         
-        # Test collections
-        logger.info("Testing collections access...")
-        timer_count = timers_collection.count_documents({})
-        logger.info(f"Found {timer_count} documents in timers collection")
-        
+        if db is None:
+            db = client['axiom']
+            timers_collection = db['timers']
+            users_collection = db['users']
+            pending_users_collection = db['pending_users']
+            
+        return client
     except Exception as e:
         logger.error(f"MongoDB connection failed: {e}")
         logger.error(f"Full error: {traceback.format_exc()}")
         client = None
+        return None
+
+# Initialize MongoDB connection
+if MONGODB_AVAILABLE:
+    try:
+        logger.info("Attempting initial MongoDB connection...")
+        if get_mongodb_client():
+            logger.info("MongoDB connected successfully!")
+            # Verify collections
+            timer_count = timers_collection.count_documents({})
+            logger.info(f"Found {timer_count} documents in timers collection")
+    except Exception as e:
+        logger.error(f"Initial MongoDB setup failed: {e}")
+        logger.error(f"Full error: {traceback.format_exc()}")
 
 # Debug route to check MongoDB connection
 @app.route('/debug/mongodb')
@@ -322,33 +352,59 @@ def load_timers():
         logger.info("Starting to load timers...")
         timers = {}
         
-        # Verify MongoDB connection
-        if client is None:
-            logger.error("MongoDB client is None, using dummy collection")
+        # Ensure we have a valid MongoDB connection
+        if get_mongodb_client() is None:
+            logger.error("Could not establish MongoDB connection, returning empty timers")
             return {}
             
-        try:
-            # Test connection is still alive
-            client.admin.command('ping')
-        except Exception as e:
-            logger.error(f"MongoDB ping failed: {e}")
-            return {}
-            
-        # Get all timers
-        all_docs = list(timers_collection.find())
-        logger.info(f"Found {len(all_docs)} timer documents")
-        
-        for doc in all_docs:
+        # Get all timers with retry logic
+        retry_count = 0
+        max_retries = 3
+        while retry_count < max_retries:
             try:
-                name = doc.get('name')
-                if name:
-                    timers[name] = doc
-                    logger.info(f"Loaded timer for {name}: kill_time={doc.get('kill_time')}, spawn_time={doc.get('spawn_time')}")
-                else:
-                    logger.warning(f"Found document without name: {doc}")
+                # Get all timers
+                all_docs = list(timers_collection.find())
+                logger.info(f"Found {len(all_docs)} timer documents")
+                
+                for doc in all_docs:
+                    try:
+                        name = doc.get('name')
+                        if name:
+                            # Ensure all datetime fields are in correct format
+                            for field in ['kill_time', 'spawn_time', 'window_end_time']:
+                                if field in doc:
+                                    try:
+                                        # Verify the timestamp can be parsed
+                                        datetime.fromisoformat(doc[field])
+                                    except (ValueError, TypeError) as e:
+                                        logger.error(f"Invalid timestamp for {name} {field}: {doc[field]}")
+                                        # Remove invalid timestamp
+                                        doc[field] = None
+                            
+                            timers[name] = doc
+                            logger.info(f"Loaded timer for {name}")
+                            logger.info(f"  kill_time={doc.get('kill_time')}")
+                            logger.info(f"  spawn_time={doc.get('spawn_time')}")
+                            logger.info(f"  window_end_time={doc.get('window_end_time')}")
+                        else:
+                            logger.warning(f"Found document without name: {doc}")
+                    except Exception as e:
+                        logger.error(f"Error processing timer document: {e}")
+                        continue
+                
+                # If we got here, break the retry loop
+                break
+                
             except Exception as e:
-                logger.error(f"Error processing timer document: {e}")
-                continue
+                retry_count += 1
+                logger.error(f"Error loading timers (attempt {retry_count}/{max_retries}): {e}")
+                if retry_count < max_retries:
+                    logger.info("Retrying MongoDB connection...")
+                    client = None  # Force new connection on next get_mongodb_client call
+                    continue
+                else:
+                    logger.error("Max retries reached, returning empty timers")
+                    return {}
                 
         logger.info(f"Successfully loaded {len(timers)} timers")
         return timers
@@ -374,20 +430,28 @@ def get_boss_by_name(name):
     return None
 
 def format_remaining(td):
-    if td is None or td.total_seconds() <= 0:
-        return 'Ready!'
-    total_seconds = int(td.total_seconds())
-    
-    days = total_seconds // 86400
-    hours = (total_seconds % 86400) // 3600
-    minutes = (total_seconds % 3600) // 60
-    
-    if days > 0:
-        return f"{days} day{'s' if days != 1 else ''}, {hours} hr{'s' if hours != 1 else ''}, {minutes} min{'s' if minutes != 1 else ''}"
-    elif hours > 0:
-        return f"{hours} hr{'s' if hours != 1 else ''}, {minutes} min{'s' if minutes != 1 else ''}"
-    else:
-        return f"{minutes} min{'s' if minutes != 1 else ''}"
+    try:
+        if td is None or not isinstance(td, timedelta):
+            logger.warning(f"Invalid timedelta provided: {td}")
+            return 'N/A'
+            
+        total_seconds = int(td.total_seconds())
+        if total_seconds <= 0:
+            return 'Ready!'
+            
+        days = total_seconds // 86400
+        hours = (total_seconds % 86400) // 3600
+        minutes = (total_seconds % 3600) // 60
+        
+        if days > 0:
+            return f"{days} day{'s' if days != 1 else ''}, {hours} hr{'s' if hours != 1 else ''}, {minutes} min{'s' if minutes != 1 else ''}"
+        elif hours > 0:
+            return f"{hours} hr{'s' if hours != 1 else ''}, {minutes} min{'s' if minutes != 1 else ''}"
+        else:
+            return f"{minutes} min{'s' if minutes != 1 else ''}"
+    except Exception as e:
+        logger.error(f"Error formatting time: {e}")
+        return 'N/A'
 
 @app.errorhandler(Exception)
 def handle_exception(e):
@@ -521,10 +585,12 @@ def index():
         flash('You must be logged in to view timers.', 'danger')
         return redirect(url_for('login'))
     timers = load_timers()
-    now = datetime.utcnow()
+    now = get_current_utc()
     due_bosses = []
     upcoming_bosses = []
     lost_bosses = []
+    
+    logger.info(f"Processing timers at {now.isoformat()}")
     
     for boss in BOSSES:
         timer_entry = timers.get(boss['name'])
@@ -540,13 +606,24 @@ def index():
             window_end_time = None
         
         if last_kill:
-            last_kill_dt = datetime.fromisoformat(last_kill)
+            last_kill_dt = parse_timestamp(last_kill)
+            if not last_kill_dt:
+                logger.error(f"Could not parse last_kill time for {boss['name']}: {last_kill}")
+                continue
+                
             if spawn_time:
-                spawn_dt = datetime.fromisoformat(spawn_time)
+                spawn_dt = parse_timestamp(spawn_time)
+                if not spawn_dt:
+                    logger.error(f"Could not parse spawn time for {boss['name']}: {spawn_time}")
+                    spawn_dt = last_kill_dt + timedelta(minutes=boss['respawn_minutes'])
             else:
                 spawn_dt = last_kill_dt + timedelta(minutes=boss['respawn_minutes'])
+                
             if window_end_time:
-                window_end_dt = datetime.fromisoformat(window_end_time)
+                window_end_dt = parse_timestamp(window_end_time)
+                if not window_end_dt:
+                    logger.error(f"Could not parse window_end time for {boss['name']}: {window_end_time}")
+                    window_end_dt = spawn_dt + timedelta(minutes=boss['window_minutes'])
             else:
                 window_end_dt = spawn_dt + timedelta(minutes=boss['window_minutes'])
             

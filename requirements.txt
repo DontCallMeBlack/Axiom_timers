@@ -1,2 +1,3 @@
-flask
-pymongo[srv] 
+flask>=2.0.0
+pymongo[srv]>=4.0.0
+python-dotenv>=1.0.0
