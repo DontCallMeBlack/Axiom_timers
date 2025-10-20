@@ -318,10 +318,45 @@ def authenticate_user(username, password):
 
 # MongoDB timer helpers
 def load_timers():
-    timers = {}
-    for doc in timers_collection.find():
-        timers[doc['name']] = doc
-    return timers
+    try:
+        logger.info("Starting to load timers...")
+        timers = {}
+        
+        # Verify MongoDB connection
+        if client is None:
+            logger.error("MongoDB client is None, using dummy collection")
+            return {}
+            
+        try:
+            # Test connection is still alive
+            client.admin.command('ping')
+        except Exception as e:
+            logger.error(f"MongoDB ping failed: {e}")
+            return {}
+            
+        # Get all timers
+        all_docs = list(timers_collection.find())
+        logger.info(f"Found {len(all_docs)} timer documents")
+        
+        for doc in all_docs:
+            try:
+                name = doc.get('name')
+                if name:
+                    timers[name] = doc
+                    logger.info(f"Loaded timer for {name}: kill_time={doc.get('kill_time')}, spawn_time={doc.get('spawn_time')}")
+                else:
+                    logger.warning(f"Found document without name: {doc}")
+            except Exception as e:
+                logger.error(f"Error processing timer document: {e}")
+                continue
+                
+        logger.info(f"Successfully loaded {len(timers)} timers")
+        return timers
+        
+    except Exception as e:
+        logger.error(f"Error in load_timers: {e}")
+        logger.error(traceback.format_exc())
+        return {}
 
 def save_timer(boss_name, timer_data):
     try:
