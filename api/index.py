@@ -1,18 +1,23 @@
-from flask import Flask, render_template_string, request, redirect, url_for, flash, session
+from flask import Flask, render_template_string, request, redirect, url_for, flash, session, jsonify
 import json
 import os
 import sys
 from datetime import datetime, timedelta
 import logging
 from urllib.parse import unquote
+import traceback
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 try:
     from pymongo import MongoClient
     MONGODB_AVAILABLE = True
+    logger.info("PyMongo import successful")
 except ImportError as e:
     logger.error(f"MongoDB import failed: {e}")
     MONGODB_AVAILABLE = False
@@ -22,21 +27,69 @@ app.secret_key = os.environ.get('SECRET_KEY', 'change_this')
 
 # MongoDB setup
 MONGO_URI = os.environ.get('MONGO_URI', 'mongodb://localhost:27017')
+logger.info(f"Using MONGO_URI ending with: ...{MONGO_URI[-20:] if MONGO_URI else 'None'}")
 client = None
 
 if MONGODB_AVAILABLE:
     try:
+        logger.info("Attempting MongoDB connection...")
         client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
         # Test the connection
+        logger.info("Testing MongoDB connection with ping...")
         client.admin.command('ping')
         db = client['axiom']
         timers_collection = db['timers']
         users_collection = db['users']
         pending_users_collection = db['pending_users']
-        logger.info(f"MongoDB connected successfully to: {MONGO_URI.split('@')[1] if '@' in MONGO_URI else MONGO_URI}")
+        logger.info(f"MongoDB connected successfully to cluster")
+        
+        # Test collections
+        logger.info("Testing collections access...")
+        timer_count = timers_collection.count_documents({})
+        logger.info(f"Found {timer_count} documents in timers collection")
+        
     except Exception as e:
         logger.error(f"MongoDB connection failed: {e}")
+        logger.error(f"Full error: {traceback.format_exc()}")
         client = None
+
+# Debug route to check MongoDB connection
+@app.route('/debug/mongodb')
+def debug_mongodb():
+    if 'username' not in session or not session.get('is_admin'):
+        return jsonify({'error': 'Access denied'}), 403
+    
+    try:
+        status = {
+            'MONGODB_AVAILABLE': MONGODB_AVAILABLE,
+            'client_connected': client is not None,
+            'MONGO_URI_exists': bool(MONGO_URI),
+            'MONGO_URI_ends_with': f"...{MONGO_URI[-20:]}" if MONGO_URI else None,
+        }
+        
+        if client:
+            # Test the connection
+            client.admin.command('ping')
+            status['ping_successful'] = True
+            
+            # Check collections
+            db = client['axiom']
+            timers = list(db['timers'].find())
+            status['timer_count'] = len(timers)
+            status['timers'] = [{
+                'name': t['name'],
+                'kill_time': t.get('kill_time', 'N/A'),
+                'spawn_time': t.get('spawn_time', 'N/A'),
+                'window_end_time': t.get('window_end_time', 'N/A'),
+                'user': t.get('user', 'N/A')
+            } for t in timers]
+            
+        return jsonify(status)
+    except Exception as e:
+        return jsonify({
+            'error': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
 
 if client is None:
     # Create dummy collections for fallback
