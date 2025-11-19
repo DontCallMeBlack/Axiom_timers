@@ -159,12 +159,8 @@ BOSSES = [
     },
     {
         'name': 'Mordy',
-        'respawn_minutes': 960,
-        'window_minutes': 5
-    },
-    {'name': 'Hrung',
-        'respawn_minutes': 1080,
-        'window_minutes': 5
+        'respawn_minutes': 1200,
+        'window_minutes': 960
     },
     {
         'name': '210',
@@ -176,32 +172,41 @@ BOSSES = [
         'respawn_minutes': 135,
         'window_minutes': 5
     },
-        {
+  {
         'name': 'Proteus',
-        'respawn_minutes': 960,
+        'respawn_minutes': 1080,
         'window_minutes': 15
     },
     {
         'name': 'Dino',
-        'respawn_minutes': 1680,
-        'window_minutes': 5
+        'respawn_minutes': 2040,
+        'window_minutes': 1680
     },
     {
         'name': 'Bloodthorn',
-        'respawn_minutes': 1680,
-        'window_minutes': 5
+        'respawn_minutes': 2040,
+        'window_minutes': 1680
     },
     {
         'name': 'Gelebron',
-        'respawn_minutes': 1680,
-        'window_minutes': 5
+        'respawn_minutes': 1920,
+        'window_minutes': 1680
     },
     {
         'name': 'Crom',
         'respawn_minutes': 5760,
-        'window_minutes': 5
+        'window_minutes': 1440
+    },
+   {
+        'name': 'aggy',
+        'respawn_minutes': 1200,
+        'window_minutes': 960
+    },
+   {
+        'name': 'necro',
+        'respawn_minutes': 1320,
+        'window_minutes': 960
     }
-
 ] 
 
 # Admin users (hardcoded for security)
