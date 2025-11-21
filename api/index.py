@@ -208,7 +208,7 @@ BOSSES = [
         'window_minutes': 960
     },
 {
-        'name': hrung',
+        'name': 'hrung',
         'respawn_minutes': 1320,
         'window_minutes': 960
     }
