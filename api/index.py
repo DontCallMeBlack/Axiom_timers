@@ -125,6 +125,11 @@ BOSSES = [
         'name': 'necro',
         'respawn_minutes': 1320,
         'window_minutes': 960
+    },
+{
+        'name': 'hrung',
+        'respawn_minutes': 1320,
+        'window_minutes': 960
     }
 ] 
 
