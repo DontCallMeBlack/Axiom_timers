@@ -174,28 +174,28 @@ BOSSES = [
     },
   {
         'name': 'Proteus',
-        'respawn_minutes': 1080,
+        'respawn_minutes': 600,
         'window_minutes': 15
     },
     {
         'name': 'Dino',
-        'respawn_minutes': 2040,
-        'window_minutes': 1680
+        'respawn_minutes': 600,
+        'window_minutes': 15
     },
     {
         'name': 'Bloodthorn',
-        'respawn_minutes': 2040,
-        'window_minutes': 1680
+        'respawn_minutes': 600,
+        'window_minutes': 15
     },
     {
         'name': 'Gelebron',
-        'respawn_minutes': 1920,
-        'window_minutes': 1680
+        'respawn_minutes': 600,
+        'window_minutes': 15
     },
     {
         'name': 'Crom',
-        'respawn_minutes': 5760,
-        'window_minutes': 1440
+        'respawn_minutes': 1200,
+        'window_minutes': 15
     },
    {
         'name': 'aggy',
