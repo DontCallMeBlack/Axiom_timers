@@ -204,13 +204,13 @@ BOSSES = [
     },
    {
         'name': 'necro',
-        'respawn_minutes': 1320,
-        'window_minutes': 960
+        'respawn_minutes': 600,
+        'window_minutes': 15
     },
 {
         'name': 'hrung',
-        'respawn_minutes': 1320,
-        'window_minutes': 960
+        'respawn_minutes': 600,
+        'window_minutes': 15
     }
 ] 
 
