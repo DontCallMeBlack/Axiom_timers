@@ -199,8 +199,8 @@ BOSSES = [
     },
    {
         'name': 'aggy',
-        'respawn_minutes': 1200,
-        'window_minutes': 960
+        'respawn_minutes': 600,
+        'window_minutes': 15
     },
    {
         'name': 'necro',
