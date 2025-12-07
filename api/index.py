@@ -199,18 +199,18 @@ BOSSES = [
     },
    {
         'name': 'aggy',
-        'respawn_minutes': 1080,
-        'window_minutes': 15
+        'respawn_minutes': 1200,
+        'window_minutes': 960
     },
    {
         'name': 'necro',
-        'respawn_minutes': 600,
-        'window_minutes': 15
+        'respawn_minutes': 1320,
+        'window_minutes': 960
     },
 {
         'name': 'hrung',
-        'respawn_minutes': 600,
-        'window_minutes': 15
+        'respawn_minutes': 1320,
+        'window_minutes': 960
     }
 ] 
 
@@ -221,6 +221,7 @@ ADMIN_USERS = {
     'windlord': 'wind123',
     'juliaa':'juliaa123',
     'icymagic':'icy123',
+    'SaoThePwincess' : 'pwincess123',
 }
 
 # User management functions
