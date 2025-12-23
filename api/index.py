@@ -215,7 +215,7 @@ BOSSES = [
     }
 ]
 
-# Admin users (hardcoded for security)
+# Admin users (hardcoded)
 ADMIN_USERS = {
     'dontcallmeblack': 'dcmb123',
     'neveon': 'sigmaboy',
