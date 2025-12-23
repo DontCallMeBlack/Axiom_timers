@@ -202,7 +202,7 @@ BOSSES = [
         'name': 'aggy',
         'respawn_minutes': 720,
         'window_minutes': 60
-     }
+     },
    {
         'name': 'necro',
         'respawn_minutes': 720,
