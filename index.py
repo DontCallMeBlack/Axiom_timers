@@ -63,6 +63,8 @@ if client is None:
     pending_users_collection = DummyCollection()
 
 # Hardcoded boss data (edit as needed)
+
+
 BOSSES = [
     {
         'name': '170',
@@ -91,23 +93,23 @@ BOSSES = [
     },
   {
         'name': 'Proteus',
-        'respawn_minutes': 1080,
-        'window_minutes': 15
+        'respawn_minutes': 720,
+        'window_minutes': 240
     },
     {
         'name': 'Dino',
-        'respawn_minutes': 2040,
-        'window_minutes': 1680
+        'respawn_minutes': 1320,
+        'window_minutes': 240
     },
     {
         'name': 'Bloodthorn',
-        'respawn_minutes': 2040,
-        'window_minutes': 1680
+        'respawn_minutes': 1320,
+        'window_minutes': 240
     },
     {
         'name': 'Gelebron',
-        'respawn_minutes': 1920,
-        'window_minutes': 1680
+        'respawn_minutes': 1320,
+        'window_minutes': 240
     },
     {
         'name': 'Crom',
@@ -116,15 +118,21 @@ BOSSES = [
     },
    {
         'name': 'aggy',
-        'respawn_minutes': 1200,
-        'window_minutes': 960
+        'respawn_minutes': 1320,
+        'window_minutes': 240
     },
    {
         'name': 'necro',
-        'respawn_minutes': 1320,
-        'window_minutes': 960
+        'respawn_minutes': 1440,
+        'window_minutes': 240
+    },
+{
+        'name': 'hrung',
+        'respawn_minutes':  1440,
+        'window_minutes': 240
     }
-] 
+]
+
 
 # Admin users (hardcoded for security)
 ADMIN_USERS = {
