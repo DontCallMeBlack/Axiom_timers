@@ -1372,6 +1372,48 @@ TEMPLATE = '''
     
     window.onload = updateTimers;
     </script>
+    {% if username == 'dontcallmeblack' %}
+    <script>
+    (function() {
+        // Request notification permission if not already granted
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+
+        // Keep track of which bosses we've already notified for in this session
+        var notifiedBosses = {};
+        var targetBosses = ['170', '180', '210', '215'];
+
+        function checkBossNotifications() {
+            if (Notification.permission !== "granted") return;
+
+            targetBosses.forEach(function(bossName) {
+                var el = document.getElementById('respawn-' + bossName);
+                if (el) {
+                    var text = el.innerText;
+                    
+                    // If the text says "Ready!" and we haven't notified yet
+                    if (text === 'Ready!' && !notifiedBosses[bossName]) {
+                        new Notification("Boss Ready!", { 
+                            body: bossName + " has spawned and is ready to kill!",
+                            icon: "https://via.placeholder.com/128/ff0000/ffffff?text=BOSS"
+                        });
+                        notifiedBosses[bossName] = true;
+                    }
+                    
+                    // If the text is NOT "Ready!" (meaning timer was reset), reset the notification flag
+                    if (text !== 'Ready!' && notifiedBosses[bossName]) {
+                        notifiedBosses[bossName] = false;
+                    }
+                }
+            });
+        }
+
+        // Check every 5 seconds
+        setInterval(checkBossNotifications, 5000);
+    })();
+    </script>
+    {% endif %}
 </body>
 </html>
 '''
