@@ -155,13 +155,13 @@ BOSSES = [
     },
     {
         'name': '180',
-        'respawn_minutes': 90,
+        'respawn_minutes': 80,
         'window_minutes': 5
     },
     {
         'name': 'Mordy',
-        'respawn_minutes': 720,
-        'window_minutes': 240
+        'respawn_minutes': 1200,
+        'window_minutes': 960
     },
     {
         'name': '210',
@@ -180,18 +180,18 @@ BOSSES = [
     },
     {
         'name': 'Dino',
-        'respawn_minutes': 1320,
-        'window_minutes': 960
+        'respawn_minutes': 2040,
+        'window_minutes': 1680
     },
     {
         'name': 'Bloodthorn',
-        'respawn_minutes': 1320,
-        'window_minutes': 960
+        'respawn_minutes': 2040,
+        'window_minutes': 1680
     },
     {
         'name': 'Gelebron',
-        'respawn_minutes': 1320,
-        'window_minutes': 960
+        'respawn_minutes': 2040,
+        'window_minutes': 1680
     },
     {
         'name': 'Crom',
@@ -200,18 +200,18 @@ BOSSES = [
     },
    {
         'name': 'aggy',
-        'respawn_minutes': 720,
-        'window_minutes': 240
+        'respawn_minutes': 1200,
+        'window_minutes': 960
      },
    {
         'name': 'necro',
-        'respawn_minutes': 840,
-        'window_minutes': 240
+        'respawn_minutes': 1320,
+        'window_minutes': 960
     },
 {
         'name': 'hrung',
-        'respawn_minutes': 840,
-        'window_minutes': 240
+        'respawn_minutes': 1320,
+        'window_minutes': 960
     }
 ]
 
