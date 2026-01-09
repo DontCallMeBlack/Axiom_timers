@@ -155,7 +155,7 @@ BOSSES = [
     },
     {
         'name': '180',
-        'respawn_minutes': 80,
+        'respawn_minutes': 90,
         'window_minutes': 5
     },
     {
