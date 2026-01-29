@@ -218,7 +218,7 @@ BOSSES = [
         'respawn_minutes': 360,
         'window_minutes': 60
     }
-]
+
 ]
 
 # Admin users (hardcoded)
