@@ -212,7 +212,13 @@ BOSSES = [
         'name': 'hrung',
         'respawn_minutes': 1320,
         'window_minutes': 960
+    },
+{
+        'name': 'valley',
+        'respawn_minutes': 360,
+        'window_minutes': 360
     }
+]
 ]
 
 # Admin users (hardcoded)
