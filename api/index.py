@@ -175,7 +175,7 @@ BOSSES = [
     },
   {
         'name': 'Proteus',
-        'respawn_minutes': 1080,
+        'respawn_minutes': 780,
         'window_minutes': 15
     },
     {
@@ -185,12 +185,12 @@ BOSSES = [
     },
     {
         'name': 'Bloodthorn',
-        'respawn_minutes': 2040,
+        'respawn_minutes': 780,
         'window_minutes': 1680
     },
     {
         'name': 'Gelebron',
-        'respawn_minutes': 2040,
+        'respawn_minutes': 780,
         'window_minutes': 1680
     },
     {
