@@ -160,7 +160,7 @@ BOSSES = [
     },
     {
         'name': 'Mordy',
-        'respawn_minutes': 1200,
+        'respawn_minutes': 780,
         'window_minutes': 960
     },
     {
@@ -175,22 +175,22 @@ BOSSES = [
     },
   {
         'name': 'Proteus',
-        'respawn_minutes': 780,
+        'respawn_minutes': 1080,
         'window_minutes': 15
     },
     {
         'name': 'Dino',
-        'respawn_minutes': 2040,
+        'respawn_minutes': 780,
         'window_minutes': 1680
     },
     {
         'name': 'Bloodthorn',
-        'respawn_minutes': 780,
+        'respawn_minutes': 2040,
         'window_minutes': 1680
     },
     {
         'name': 'Gelebron',
-        'respawn_minutes': 780,
+        'respawn_minutes': 1960,
         'window_minutes': 1680
     },
     {
@@ -200,7 +200,7 @@ BOSSES = [
     },
    {
         'name': 'aggy',
-        'respawn_minutes': 1200,
+        'respawn_minutes': 780,
         'window_minutes': 960
      },
    {
