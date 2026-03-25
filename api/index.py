@@ -180,12 +180,12 @@ BOSSES = [
     },
     {
         'name': 'Dino',
-        'respawn_minutes': 1920,
+        'respawn_minutes': 2040,
         'window_minutes': 1680
     },
     {
         'name': 'Bloodthorn',
-        'respawn_minutes': 720,
+        'respawn_minutes': 2040,
         'window_minutes': 1680
     },
     {
@@ -205,13 +205,13 @@ BOSSES = [
      },
    {
         'name': 'necro',
-        'respawn_minutes': 720,
-        'window_minutes': 360
+        'respawn_minutes': 1320,
+        'window_minutes': 960
     },
 {
         'name': 'hrung',
-        'respawn_minutes': 720,
-        'window_minutes': 360
+        'respawn_minutes': 1320,
+        'window_minutes': 960
     },
 {
         'name': 'valley',
