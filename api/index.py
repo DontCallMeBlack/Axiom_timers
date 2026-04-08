@@ -180,7 +180,7 @@ BOSSES = [
     },
     {
         'name': 'Dino',
-        'respawn_minutes': 2040,
+        'respawn_minutes': 720,
         'window_minutes': 1680
     },
     {
