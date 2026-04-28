@@ -175,7 +175,7 @@ BOSSES = [
     },
   {
         'name': 'Proteus',
-        'respawn_minutes': 1080,
+        'respawn_minutes': 900,
         'window_minutes': 15
     },
     {
