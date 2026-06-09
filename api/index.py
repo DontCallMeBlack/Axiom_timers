@@ -195,7 +195,7 @@ BOSSES = [
     },
     {
         'name': 'Crom',
-        'respawn_minutes': 5760,
+        'respawn_minutes': 1380,
         'window_minutes': 1440
     },
    {
