@@ -160,7 +160,7 @@ BOSSES = [
     },
     {
         'name': 'Mordy',
-        'respawn_minutes': 1200,
+        'respawn_minutes': 960,
         'window_minutes': 960
     },
     {
@@ -200,17 +200,17 @@ BOSSES = [
     },
    {
         'name': 'aggy',
-        'respawn_minutes': 1200,
+        'respawn_minutes': 960,
         'window_minutes': 960
      },
    {
         'name': 'necro',
-        'respawn_minutes': 1320,
+        'respawn_minutes': 1080,
         'window_minutes': 960
     },
 {
         'name': 'hrung',
-        'respawn_minutes': 1320,
+        'respawn_minutes': 960,
         'window_minutes': 960
     },
 {
