@@ -180,22 +180,22 @@ BOSSES = [
     },
     {
         'name': 'Dino',
-        'respawn_minutes': 2040,
+        'respawn_minutes': 1680,
         'window_minutes': 1680
     },
     {
         'name': 'Bloodthorn',
-        'respawn_minutes': 2040,
+        'respawn_minutes': 1680,
         'window_minutes': 1680
     },
     {
         'name': 'Gelebron',
-        'respawn_minutes': 2040,
+        'respawn_minutes': 1680,
         'window_minutes': 1680
     },
     {
         'name': 'Crom',
-        'respawn_minutes': 1380,
+        'respawn_minutes': 5760,
         'window_minutes': 1440
     },
    {
