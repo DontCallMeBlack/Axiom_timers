@@ -217,7 +217,12 @@ BOSSES = [
         'name': 'valley',
         'respawn_minutes': 360,
         'window_minutes': 60
-    }
+    },
+{
+        'name': 'test',
+        'respawn_minutes': 900,
+        'window_minutes': 900
+      },
 
 ]
 
