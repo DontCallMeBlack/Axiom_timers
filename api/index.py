@@ -185,7 +185,7 @@ BOSSES = [
     },
     {
         'name': 'Bloodthorn',
-        'respawn_minutes': 1920,
+        'respawn_minutes': 960,
         'window_minutes': 1680
     },
     {
